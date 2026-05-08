@@ -174,7 +174,7 @@ body {
 
 /* Bot Name Tag */
 .bot::before {
-  content: 'Claude'; 
+  content: 'MEDLAB AI'; 
   font-family: var(--font-sans);
   font-size: 0.75rem;
   font-weight: 700;
@@ -279,7 +279,7 @@ input:focus {
 
 button {
   min-width: auto;
-  padding: 10px 16px;
+  padding: 10px 16px !important;
   border-radius: 12px;
   border: none;
   background: var(--accent);
