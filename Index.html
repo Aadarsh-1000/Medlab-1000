@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MEDLAB AI</title>
+  <link rel="stylesheet" href="ai.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+<header class="page-header">
+  <nav class="ai-nav">
+    <a href="index.html">Homepage</a>
+    <a href="home.html">Details</a>
+    <a href="https://raw.githubusercontent.com/Aadarsh-1000/MEDLAB/main/README.md">About</a>
+  </nav>
+</header>
+<main class="page-main">
+  <div class="chat-container">
+    <div id="chat-box"></div>
+
+    <div class="input-box">
+      <input id="user-input" placeholder="Ask a medical question..." />
+      <button onclick="sendMessage()">Send</button>
+    </div>
+  </div>
+</main>
+
+<script>
+  async function sendMessage() {
+  const input = document.getElementById("user-input");
+  const chatBox = document.getElementById("chat-box");
+  const sendButton = document.querySelector(".input-box button");
+
+  const userText = input.value.trim();
+  if (!userText) return;
+
+  chatBox.innerHTML += `<div class="message user">${userText}</div>`;
+  input.value = "";
+  input.disabled = true;
+  sendButton.disabled = true;
+
+  const loadingId = `loading-${Date.now()}`;
+  chatBox.innerHTML += `
+    <div id="${loadingId}" class="message bot loading-message" aria-label="AI is typing">
+      <span class="loading-text">Thinking</span>
+      <div class="loading" aria-hidden="true">
+        <span></span><span></span><span></span>
+      </div>
+    </div>
+  `;
+  chatBox.scrollTop = chatBox.scrollHeight;
+
+  try {
+    const res = await fetch("/api/generate", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ prompt: userText }),
+    });
+
+    const data = await res.json();
+    console.log("AI RESPONSE:", data);
+
+    if (!res.ok) {
+      throw new Error(data.message || "Unable to get a response right now.");
+    }
+
+    const botReply =
+      (data.response && data.response.trim()) ||
+      "AI returned empty response";
+
+    document.getElementById(loadingId)?.remove();
+    chatBox.innerHTML += `<div class="message bot">${botReply}</div>`;
+  } catch (error) {
+
+    document.getElementById(loadingId)?.remove();
+    chatBox.innerHTML += `<div class="message bot">Error: ${error.message}</div>`;
+  } finally {
+    input.disabled = false;
+    sendButton.disabled = false;
+    input.focus();
+  }
+
+  chatBox.scrollTop = chatBox.scrollHeight;
+}
+
+</script>
+</body>
+</html>
