@@ -2,7 +2,7 @@
   "name": "medlab-1000",
   "version": "1.0.0",
   "private": true,
-  "scripts": {
+  "scripts": {  
     "build": "echo Build complete"
   }
 }

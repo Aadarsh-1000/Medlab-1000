@@ -1,7 +1,7 @@
 import { getSession } from "./_lib/auth.js";
 
 export default async function handler(req, res) {
-  if (req.method !== "POST") {
+    if (req.method !== "POST") {
     res.status(405).json({ message: "POST only" });
     return;
   }
