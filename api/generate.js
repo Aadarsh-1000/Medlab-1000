@@ -1,4 +1,4 @@
-import { getSession } from "./_lib/auth.js";
+
 
 export default async function handler(req, res) {
     if (req.method !== "POST") {
@@ -6,12 +6,7 @@ export default async function handler(req, res) {
     return;
   }
 
-  const user = getSession(req);
-  if (!user) {
-    res.status(401).json({ message: "Please sign in from the homepage first." });
-    return;
-  }
-
+  
   const prompt = String(req.body?.prompt || "").trim();
   if (!prompt) {
     res.status(400).json({ message: "Prompt is required." });
