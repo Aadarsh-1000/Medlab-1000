@@ -6,21 +6,20 @@
 
 :root {
   /* The "Claude" Palette - Warm, sophisticated, easy on the eyes */
-  --bg-primary: #1A1B1E;         // Deep, warm charcoal (not pure black)
-  --bg-secondary: #212226;       // Subtle lift for containers
-  --bg-tertiary: #2A2B30;        // Hover states
-  --text-primary: #E4E2DE;       // Warm off-white
-  --text-secondary: #8E8D8A;     // Muted gray for timestamps/less important text
-  --accent: #D97757;             // Anthropic Terracotta/Sienna
-  --accent-hover: #E8927A;       // Lighter terracotta
+  --bg-primary: #1A1B1E;        
+  --bg-secondary: #212226;       
+  --bg-tertiary: #2A2B30;        
+  --text-primary: #E4E2DE;       
+  --text-secondary: #8E8D8A;   
+  --accent: #D97757;          
+  --accent-hover: #E8927A;       
   --border-subtle: rgba(255, 255, 255, 0.06);
   --border-medium: rgba(255, 255, 255, 0.1);
   
   /* Typography Scale */
   --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
   --font-serif: 'Lora', Georgia, serif;
-  --chat-max-width: 768px;       // Crucial for readability - matches Claude's narrow column
-}
+  --chat-max-width: 768px;      
 
 /* --- GLOBAL RESET & BASE --- */
 *, *::before, *::after {
@@ -28,7 +27,7 @@
   margin: 0;
   padding: 0;
 }
-
+}
 body {
   font-family: var(--font-sans);
   background-color: var(--bg-primary);
@@ -37,7 +36,7 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
-  overflow: hidden; // Prevent double scrollbars
+  overflow: hidden; 
 }
 
 /* Custom Selection Color */
@@ -89,7 +88,7 @@ body {
 
 .page-main {
   height: 100vh;
-  padding-top: 56px; // Offset for fixed header
+  padding-top: 56px; 
   display: flex;
   flex-direction: column;
 }
@@ -109,7 +108,7 @@ body {
 #chat-box {
   flex: 1;
   overflow-y: auto;
-  padding: 40px 0 120px 0; // Bottom padding so text doesn't hide behind input
+  padding: 40px 0 120px 0; 
   scroll-behavior: smooth;
 }
 
@@ -150,7 +149,7 @@ body {
   margin-left: auto;
   padding: 10px 20px;
   background: var(--bg-tertiary);
-  border-radius: 20px 20px 4px 20px; // Tail on bottom right
+  border-radius: 20px 20px 4px 20px; 
   color: var(--text-primary);
   font-family: var(--font-sans);
   font-weight: 500;
@@ -170,12 +169,12 @@ body {
   border: none;
   position: relative;
   padding-left: 20px;
-  border-left: 2px solid var(--accent); // Anthropic signature line
+  border-left: 2px solid var(--accent); 
 }
 
 /* Bot Name Tag */
 .bot::before {
-  content: 'Claude'; // Change to your AI's name
+  content: 'Claude'; 
   font-family: var(--font-sans);
   font-size: 0.75rem;
   font-weight: 700;
@@ -238,7 +237,7 @@ body {
   left: 50%;
   transform: translateX(-50%);
   width: 100%;
-  max-width: calc(var(--chat-max-width) - 48px); // Align with text
+  max-width: calc(var(--chat-max-width) - 48px); 
   display: flex;
   gap: 12px;
   align-items: center;
@@ -266,7 +265,7 @@ input {
   color: var(--text-primary);
   font-size: 1rem;
   font-family: var(--font-sans);
-  caret-color: var(--accent); // Anthropic orange cursor
+  caret-color: var(--accent);
 }
 
 input::placeholder {
