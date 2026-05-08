@@ -71,7 +71,7 @@
       (data.response && data.response.trim()) ||
       "AI returned empty response";
 
-    document.getElementById(loadingId)?.remove();
+         document.getElementById(loadingId)?.remove();
     chatBox.innerHTML += `<div class="message bot">${botReply}</div>`;
   } catch (error) {
 
