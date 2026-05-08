@@ -20,7 +20,7 @@ async function sendMessage() {
       </div>
     </div>
   `;
-  chatBox.scrollTop = chatBox.scrollHeight;
+           chatBox.scrollTop = chatBox.scrollHeight;
 
   try {
     const res = await fetch("/api/generate", {
