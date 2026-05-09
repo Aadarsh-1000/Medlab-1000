@@ -464,145 +464,218 @@
 
   </main>
 
-  <script>
-    const chatBox = document.getElementById("chat-box");
-    const userInput = document.getElementById("user-input");
-    const sendBtn = document.getElementById("send-btn");
+ <script>
+  const chatBox = document.getElementById("chat-box");
+  const userInput = document.getElementById("user-input");
+  const sendBtn = document.getElementById("send-btn");
 
-    // Auto-resize textarea
-    userInput.addEventListener('input', function() {
-      this.style.height = 'auto';
-      this.style.height = (this.scrollHeight) + 'px';
-      if(this.value === '') this.style.height = 'auto';
+  // =========================
+  // AUTO RESIZE TEXTAREA
+  // =========================
+  userInput.addEventListener("input", function () {
+    this.style.height = "auto";
+    this.style.height = this.scrollHeight + "px";
+
+    if (this.scrollHeight > 120) {
+      this.style.overflowY = "auto";
+    } else {
+      this.style.overflowY = "hidden";
+    }
+  });
+
+  // =========================
+  // SCROLL TO BOTTOM
+  // =========================
+  function scrollToBottom() {
+    chatBox.scrollTo({
+      top: chatBox.scrollHeight,
+      behavior: "smooth"
     });
+  }
 
-    // Scroll to bottom utility
-    function scrollToBottom() {
-      chatBox.scrollTo({
-        top: chatBox.scrollHeight,
-        behavior: 'smooth'
-      });
+  // =========================
+  // CREATE MESSAGE
+  // =========================
+  function appendMessage(text, sender) {
+    const row = document.createElement("div");
+    row.classList.add("message-row", sender);
+
+    const avatar = document.createElement("div");
+    avatar.classList.add("avatar", sender);
+
+    const bubble = document.createElement("div");
+    bubble.classList.add("bubble");
+
+    // Icons
+    if (sender === "bot") {
+      avatar.innerHTML = '<i class="ph ph-robot"></i>';
+    } else {
+      avatar.innerHTML = '<i class="ph ph-user"></i>';
     }
 
-    // Create Message HTML
-    function appendMessage(text, sender) {
-      const row = document.createElement('div');
-      row.classList.add('message-row', sender);
-      
-      const avatar = document.createElement('div');
-      avatar.classList.add('avatar', sender);
-      
-      const bubble = document.createElement('div');
-      bubble.classList.add('bubble');
-      
-      // Add Icons
-      if (sender === 'bot') {
-        avatar.innerHTML = '<i class="ph ph-robot"></i>';
-      } else {
-        avatar.innerHTML = '<i class="ph ph-user"></i>';
-      }
-      
-      // Handle basic HTML in response (bolding, line breaks)
-      bubble.innerHTML = text.replace(/\n/g, '<br>');
-      
-      row.appendChild(avatar);
-      row.appendChild(bubble);
-      chatBox.appendChild(row);
-      scrollToBottom();
-    }
+    // Preserve line breaks
+    bubble.innerHTML = text.replace(/\n/g, "<br>");
 
-    // Show Loading Indicator
-    function showLoading() {
-      const row = document.createElement('div');
-      row.classList.add('message-row', 'bot');
-      row.id = 'loading-indicator';
-      
-      row.innerHTML = `
-        <div class="avatar bot"><i class="ph ph-robot"></i></div>
-        <div class="bubble">
-          <div class="typing-indicator">
-            <div class="dot"></div>
-            <div class="dot"></div>
-            <div class="dot"></div>
-          </div>
+    row.appendChild(avatar);
+    row.appendChild(bubble);
+
+    chatBox.appendChild(row);
+
+    scrollToBottom();
+  }
+
+  // =========================
+  // SHOW LOADING
+  // =========================
+  function showLoading() {
+    const row = document.createElement("div");
+
+    row.classList.add("message-row", "bot");
+    row.id = "loading-indicator";
+
+    row.innerHTML = `
+      <div class="avatar bot">
+        <i class="ph ph-robot"></i>
+      </div>
+
+      <div class="bubble">
+        <div class="typing-indicator">
+          <div class="dot"></div>
+          <div class="dot"></div>
+          <div class="dot"></div>
         </div>
-      `;
-      
-      chatBox.appendChild(row);
+      </div>
+    `;
+
+    chatBox.appendChild(row);
+
+    scrollToBottom();
+  }
+
+  // =========================
+  // REMOVE LOADING
+  // =========================
+  function removeLoading() {
+    const loader = document.getElementById("loading-indicator");
+
+    if (loader) {
+      loader.remove();
+    }
+  }
+
+  // =========================
+  // SEND MESSAGE
+  // =========================
+  async function handleSend() {
+
+    const text = userInput.value.trim();
+
+    if (!text) return;
+
+    // Add User Message
+    appendMessage(text, "user");
+
+    // Clear Input
+    userInput.value = "";
+    userInput.style.height = "auto";
+
+    // Disable Input
+    userInput.disabled = true;
+    sendBtn.disabled = true;
+
+    // Show Loader
+    showLoading();
+
+    try {
+
+      // =========================
+      // API REQUEST
+      // =========================
+      const response = await fetch("/api/generate", {
+
+        method: "POST",
+
+        headers: {
+          "Content-Type": "application/json"
+        },
+
+        body: JSON.stringify({
+          prompt: text
+        })
+
+      });
+
+      let data = {};
+
+      try {
+        data = await response.json();
+      } catch {
+        throw new Error("Invalid server response");
+      }
+
+      removeLoading();
+
+      if (!response.ok) {
+        throw new Error(
+          data.message || "Server error occurred"
+        );
+      }
+
+      const reply =
+        data.response?.trim() ||
+        "No response received.";
+
+      appendMessage(reply, "bot");
+
+    } catch (error) {
+
+      removeLoading();
+
+      appendMessage(
+        "⚠️ Error: " + error.message,
+        "bot"
+      );
+
+      console.error(error);
+
+    } finally {
+
+      userInput.disabled = false;
+      sendBtn.disabled = false;
+
+      userInput.focus();
+
       scrollToBottom();
     }
+  }
 
-    function removeLoading() {
-      const loader = document.getElementById('loading-indicator');
-      if (loader) loader.remove();
+  // =========================
+  // BUTTON CLICK
+  // =========================
+  sendBtn.addEventListener("click", handleSend);
+
+  // =========================
+  // ENTER TO SEND
+  // SHIFT+ENTER = NEW LINE
+  // =========================
+  userInput.addEventListener("keydown", (e) => {
+
+    if (e.key === "Enter" && !e.shiftKey) {
+
+      e.preventDefault();
+
+      handleSend();
     }
 
-    // Main Send Logic
-    async function handleSend() {
-      const text = userInput.value.trim();
-      if (!text) return;
+  });
 
-      // 1. Add User Message
-      appendMessage(text, 'user');
-      userInput.value = '';
-      userInput.style.height = 'auto';
-      
-      // Disable Input
-      userInput.disabled = true;
-      sendBtn.disabled = true;
-
-      // 2. Show Loading
-      showLoading();
-
-      // 3. Simulate API Delay & Response
-      // NOTE: In your real app, uncomment the fetch logic below.
-      // For this demo, we simulate a response so you can see the UI.
-      
-      try {
-        /* 
-        // --- REAL API CODE ---
-        const response = await fetch("/api/generate", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ prompt: text })
-        });
-        
-        const data = await response.json();
-        const reply = data.response?.trim() || "No data received.";
-        */
-
-        // --- DEMO SIMULATION (Remove this block in production) ---
-        await new Promise(r => setTimeout(r, 1500)); // Fake network delay
-        const reply = "I've analyzed your query regarding \"" + text + "\". Based on current medical protocols, it is recommended to consult a specialist for a precise diagnosis. I can provide more detailed statistics if needed.";
-        // ---------------------------------------------------------
-
-        removeLoading();
-        appendMessage(reply, 'bot');
-
-      } catch (error) {
-        removeLoading();
-        appendMessage("I apologize, but I'm having trouble connecting to the server right now.", 'bot');
-        console.error(error);
-      } finally {
-        userInput.disabled = false;
-        sendBtn.disabled = false;
-        userInput.focus();
-      }
-    }
-
-    // Event Listeners
-    sendBtn.addEventListener('click', handleSend);
-
-    userInput.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter' && !e.shiftKey) {
-        e.preventDefault();
-        handleSend();
-      }
-    });
-
-    // Focus input on load
+  // =========================
+  // FOCUS INPUT ON LOAD
+  // =========================
+  window.addEventListener("load", () => {
     userInput.focus();
+  });
 
-  </script>
+</script>
 </body>
 </html>
