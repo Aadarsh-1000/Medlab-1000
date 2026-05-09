@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 
@@ -15,17 +16,23 @@
 
 <style>
 
+/* ========================= */
+/* ROOT */
+/* ========================= */
+
 :root{
   --bg:#1b1c1d;
   --sidebar:#171717;
   --chat:#212121;
-  --border:#2c2c2c;
+  --border:#2d2d2d;
   --text:#f5f5f5;
   --muted:#9ca3af;
-  --user:#343541;
-  --bot:#262626;
   --accent:#d97757;
 }
+
+/* ========================= */
+/* RESET */
+/* ========================= */
 
 *{
   margin:0;
@@ -41,7 +48,9 @@ body{
   overflow:hidden;
 }
 
+/* ========================= */
 /* APP */
+/* ========================= */
 
 .app{
   display:flex;
@@ -49,7 +58,9 @@ body{
   width:100%;
 }
 
+/* ========================= */
 /* SIDEBAR */
+/* ========================= */
 
 .sidebar{
   width:260px;
@@ -64,7 +75,7 @@ body{
   display:flex;
   align-items:center;
   gap:12px;
-  margin-bottom:30px;
+  margin-bottom:24px;
 }
 
 .logo-icon{
@@ -90,24 +101,88 @@ body{
 }
 
 .new-chat{
-  background:#2b2b2b;
+  width:100%;
+  background:#2a2a2a;
   border:1px solid var(--border);
   color:white;
   padding:14px;
   border-radius:14px;
   cursor:pointer;
-  font-size:14px;
   display:flex;
   align-items:center;
   gap:10px;
+  font-size:14px;
   transition:.2s;
 }
 
 .new-chat:hover{
-  background:#323232;
+  background:#343434;
 }
 
+/* ========================= */
+/* HISTORY */
+/* ========================= */
+
+.history-section{
+  margin-top:30px;
+  display:flex;
+  flex-direction:column;
+  flex:1;
+  overflow:hidden;
+}
+
+.history-title{
+  font-size:12px;
+  color:#7a7a7a;
+  text-transform:uppercase;
+  margin-bottom:12px;
+  letter-spacing:.08em;
+  padding-left:6px;
+}
+
+.history-list{
+  display:flex;
+  flex-direction:column;
+  gap:6px;
+  overflow-y:auto;
+}
+
+.history-item{
+  width:100%;
+  background:transparent;
+  border:none;
+  color:#d4d4d4;
+  padding:12px 14px;
+  border-radius:12px;
+  text-align:left;
+  cursor:pointer;
+  display:flex;
+  align-items:center;
+  gap:10px;
+  transition:.2s;
+  font-size:14px;
+}
+
+.history-item:hover{
+  background:#2b2b2b;
+}
+
+.history-item.active{
+  background:#343434;
+}
+
+.history-list::-webkit-scrollbar{
+  width:6px;
+}
+
+.history-list::-webkit-scrollbar-thumb{
+  background:#333;
+  border-radius:10px;
+}
+
+/* ========================= */
 /* MAIN */
+/* ========================= */
 
 .main{
   flex:1;
@@ -116,7 +191,9 @@ body{
   height:100vh;
 }
 
+/* ========================= */
 /* HEADER */
+/* ========================= */
 
 .topbar{
   height:65px;
@@ -129,16 +206,18 @@ body{
 }
 
 .topbar-title{
-  font-weight:600;
   font-size:15px;
+  font-weight:600;
 }
 
+/* ========================= */
 /* CHAT */
+/* ========================= */
 
 .chat-area{
   flex:1;
   overflow-y:auto;
-  padding:40px 0 160px;
+  padding:40px 0 150px;
 }
 
 .chat-wrapper{
@@ -148,19 +227,21 @@ body{
   padding:0 24px;
 }
 
+/* ========================= */
 /* MESSAGES */
+/* ========================= */
 
 .message{
   display:flex;
   gap:18px;
-  margin-bottom:32px;
+  margin-bottom:34px;
   animation:fadeUp .25s ease;
 }
 
 .avatar{
-  width:36px;
-  height:36px;
-  border-radius:10px;
+  width:38px;
+  height:38px;
+  border-radius:12px;
   flex-shrink:0;
   display:flex;
   align-items:center;
@@ -174,22 +255,25 @@ body{
 }
 
 .avatar.user{
-  background:#3b3b3b;
-}
+  background:linear-gradient(
+    135deg,
+    #6366f1,
+    #8b5cf6
+  );
 
-.bubble{
-  line-height:1.75;
-  font-size:15px;
-  color:#ececec;
-  padding-top:4px;
-  white-space:pre-wrap;
-}
-
-.user .bubble{
   color:white;
 }
 
+.bubble{
+  line-height:1.8;
+  font-size:15px;
+  white-space:pre-wrap;
+  padding-top:4px;
+}
+
+/* ========================= */
 /* INPUT */
+/* ========================= */
 
 .input-area{
   position:fixed;
@@ -197,7 +281,11 @@ body{
   left:260px;
   right:0;
   padding:24px;
-  background:linear-gradient(to top,#1b1c1d 70%,transparent);
+  background:linear-gradient(
+    to top,
+    #1b1c1d 70%,
+    transparent
+  );
 }
 
 .input-wrapper{
@@ -209,9 +297,10 @@ body{
   background:#2a2a2a;
   border:1px solid #3a3a3a;
   border-radius:24px;
+  padding:10px;
   display:flex;
   align-items:flex-end;
-  padding:10px;
+  gap:10px;
   transition:.2s;
 }
 
@@ -221,9 +310,9 @@ body{
 
 textarea{
   flex:1;
-  resize:none;
-  border:none;
   background:transparent;
+  border:none;
+  resize:none;
   color:white;
   font-family:inherit;
   font-size:15px;
@@ -244,8 +333,8 @@ textarea::placeholder{
   background:var(--accent);
   color:white;
   cursor:pointer;
-  font-size:18px;
   flex-shrink:0;
+  font-size:18px;
   transition:.2s;
 }
 
@@ -258,12 +347,14 @@ textarea::placeholder{
   cursor:not-allowed;
 }
 
+/* ========================= */
 /* TYPING */
+/* ========================= */
 
 .typing{
   display:flex;
   gap:5px;
-  padding-top:10px;
+  padding-top:8px;
 }
 
 .typing span{
@@ -282,31 +373,41 @@ textarea::placeholder{
   animation-delay:.4s;
 }
 
+/* ========================= */
 /* ANIMATIONS */
+/* ========================= */
 
 @keyframes bounce{
+
   0%,80%,100%{
     transform:scale(.7);
     opacity:.5;
   }
+
   40%{
     transform:scale(1);
     opacity:1;
   }
+
 }
 
 @keyframes fadeUp{
+
   from{
     opacity:0;
     transform:translateY(10px);
   }
+
   to{
     opacity:1;
     transform:translateY(0);
   }
+
 }
 
+/* ========================= */
 /* MOBILE */
+/* ========================= */
 
 @media(max-width:768px){
 
@@ -329,6 +430,7 @@ textarea::placeholder{
 }
 
 </style>
+
 </head>
 
 <body>
@@ -340,6 +442,7 @@ textarea::placeholder{
   <aside class="sidebar">
 
     <div class="logo">
+
       <div class="logo-icon">
         <i class="ph ph-brain"></i>
       </div>
@@ -348,12 +451,28 @@ textarea::placeholder{
         <h1>MEDLAB AI</h1>
         <span>Medical Assistant</span>
       </div>
+
     </div>
 
-    <button class="new-chat">
+    <button id="new-chat-btn" class="new-chat">
+
       <i class="ph ph-plus"></i>
+
       New Chat
+
     </button>
+
+    <!-- HISTORY -->
+
+    <div class="history-section">
+
+      <div class="history-title">
+        Recent Chats
+      </div>
+
+      <div id="history-list" class="history-list"></div>
+
+    </div>
 
   </aside>
 
@@ -362,33 +481,18 @@ textarea::placeholder{
   <main class="main">
 
     <header class="topbar">
+
       <div class="topbar-title">
         MEDLAB AI
       </div>
+
     </header>
 
     <!-- CHAT -->
 
     <div id="chat-box" class="chat-area">
 
-      <div class="chat-wrapper">
-
-        <div class="message bot">
-
-          <div class="avatar bot">
-            <i class="ph ph-sparkle"></i>
-          </div>
-
-          <div class="bubble">
-Hello 👋
-
-I'm MEDLAB AI.
-Ask me any medical question.
-          </div>
-
-        </div>
-
-      </div>
+      <div class="chat-wrapper"></div>
 
     </div>
 
@@ -411,7 +515,9 @@ Ask me any medical question.
       ></textarea>
 
       <button id="send-btn" class="send-btn">
+
         <i class="ph ph-arrow-up"></i>
+
       </button>
 
     </div>
@@ -422,86 +528,286 @@ Ask me any medical question.
 
 <script>
 
-const chatBox = document.getElementById("chat-box");
-const userInput = document.getElementById("user-input");
-const sendBtn = document.getElementById("send-btn");
+/* ========================= */
+/* ELEMENTS */
+/* ========================= */
 
+const chatBox =
+  document.getElementById("chat-box");
+
+const userInput =
+  document.getElementById("user-input");
+
+const sendBtn =
+  document.getElementById("send-btn");
+
+const historyList =
+  document.getElementById("history-list");
+
+const newChatBtn =
+  document.getElementById("new-chat-btn");
+
+const wrapper =
+  document.querySelector(".chat-wrapper");
+
+/* ========================= */
+/* CHAT STORAGE */
+/* ========================= */
+
+let chats = [];
+
+let currentChatId = null;
+
+/* ========================= */
 /* AUTO RESIZE */
+/* ========================= */
 
 userInput.addEventListener("input", function(){
 
   this.style.height = "auto";
-  this.style.height = this.scrollHeight + "px";
+
+  this.style.height =
+    this.scrollHeight + "px";
 
 });
 
+/* ========================= */
 /* SCROLL */
+/* ========================= */
 
 function scrollBottom(){
 
   chatBox.scrollTo({
-    top:chatBox.scrollHeight,
-    behavior:"smooth"
+
+    top: chatBox.scrollHeight,
+
+    behavior: "smooth"
+
   });
 
 }
 
-/* ADD MESSAGE */
+/* ========================= */
+/* CREATE CHAT */
+/* ========================= */
 
-function addMessage(text,sender){
+function createNewChat(){
 
-  const wrapper = document.querySelector(".chat-wrapper");
+  const id = Date.now();
 
-  const msg = document.createElement("div");
+  const chat = {
 
-  msg.className = `message ${sender}`;
+    id,
 
-  msg.innerHTML = `
+    title: "New Chat",
 
-    <div class="avatar ${sender}">
-      <i class="ph ${
-        sender === "bot"
-        ? "ph-sparkle"
-        : "ph-user"
-      }"></i>
-    </div>
+    messages: []
 
-    <div class="bubble">
-      ${text.replace(/\n/g,"<br>")}
-    </div>
+  };
 
-  `;
+  chats.unshift(chat);
 
-  wrapper.appendChild(msg);
+  currentChatId = id;
+
+  renderHistory();
+
+  renderChat();
+
+}
+
+/* ========================= */
+/* RENDER HISTORY */
+/* ========================= */
+
+function renderHistory(){
+
+  historyList.innerHTML = "";
+
+  chats.forEach(chat => {
+
+    const btn =
+      document.createElement("button");
+
+    btn.className = "history-item";
+
+    if(chat.id === currentChatId){
+
+      btn.classList.add("active");
+
+    }
+
+    btn.innerHTML = `
+
+      <i class="ph ph-chat-circle"></i>
+
+      <span>${chat.title}</span>
+
+    `;
+
+    btn.onclick = () => {
+
+      currentChatId = chat.id;
+
+      renderHistory();
+
+      renderChat();
+
+    };
+
+    historyList.appendChild(btn);
+
+  });
+
+}
+
+/* ========================= */
+/* RENDER CHAT */
+/* ========================= */
+
+function renderChat(){
+
+  wrapper.innerHTML = "";
+
+  const current =
+    chats.find(c => c.id === currentChatId);
+
+  if(!current) return;
+
+  // Welcome Message
+
+  if(current.messages.length === 0){
+
+    wrapper.innerHTML = `
+
+      <div class="message bot">
+
+        <div class="avatar bot">
+
+          <i class="ph ph-sparkle"></i>
+
+        </div>
+
+        <div class="bubble">
+
+Hello 👋
+
+I'm MEDLAB AI.
+Ask me any medical question.
+
+        </div>
+
+      </div>
+
+    `;
+
+    return;
+
+  }
+
+  // Messages
+
+  current.messages.forEach(msg => {
+
+    const div =
+      document.createElement("div");
+
+    div.className =
+      `message ${msg.sender}`;
+
+    div.innerHTML = `
+
+      <div class="avatar ${msg.sender}">
+
+        <i class="ph ${
+          msg.sender === "bot"
+          ? "ph-sparkle"
+          : "ph-user-circle"
+        }"></i>
+
+      </div>
+
+      <div class="bubble">
+
+        ${msg.text.replace(/\n/g,"<br>")}
+
+      </div>
+
+    `;
+
+    wrapper.appendChild(div);
+
+  });
 
   scrollBottom();
 
 }
 
+/* ========================= */
+/* ADD MESSAGE */
+/* ========================= */
+
+function addMessage(text,sender){
+
+  const current =
+    chats.find(c => c.id === currentChatId);
+
+  if(!current) return;
+
+  current.messages.push({
+
+    sender,
+    text
+
+  });
+
+  // Update title
+
+  if(
+    sender === "user" &&
+    current.messages.length === 1
+  ){
+
+    current.title =
+      text.substring(0,30);
+
+  }
+
+  renderHistory();
+
+  renderChat();
+
+}
+
+/* ========================= */
 /* LOADING */
+/* ========================= */
 
 function showLoading(){
 
-  const wrapper = document.querySelector(".chat-wrapper");
+  const loading =
+    document.createElement("div");
 
-  const loading = document.createElement("div");
-
-  loading.className = "message bot";
+  loading.className =
+    "message bot";
 
   loading.id = "loading";
 
   loading.innerHTML = `
 
     <div class="avatar bot">
+
       <i class="ph ph-sparkle"></i>
+
     </div>
 
     <div class="bubble">
 
       <div class="typing">
+
         <span></span>
         <span></span>
         <span></span>
+
       </div>
 
     </div>
@@ -516,33 +822,44 @@ function showLoading(){
 
 function removeLoading(){
 
-  const loading = document.getElementById("loading");
+  const loading =
+    document.getElementById("loading");
 
-  if(loading) loading.remove();
+  if(loading){
+
+    loading.remove();
+
+  }
 
 }
 
+/* ========================= */
 /* SEND */
+/* ========================= */
 
 async function sendMessage(){
 
-  const text = userInput.value.trim();
+  const text =
+    userInput.value.trim();
 
   if(!text) return;
 
   addMessage(text,"user");
 
   userInput.value = "";
+
   userInput.style.height = "auto";
 
   userInput.disabled = true;
+
   sendBtn.disabled = true;
 
   showLoading();
 
   try{
 
-    const response = await fetch("/api/generate",{
+    const response =
+      await fetch("/api/generate",{
 
       method:"POST",
 
@@ -559,9 +876,16 @@ async function sendMessage(){
     let data = {};
 
     try{
-      data = await response.json();
+
+      data =
+        await response.json();
+
     }catch{
-      throw new Error("Invalid server response");
+
+      throw new Error(
+        "Invalid server response"
+      );
+
     }
 
     removeLoading();
@@ -569,7 +893,8 @@ async function sendMessage(){
     if(!response.ok){
 
       throw new Error(
-        data.message || "Server Error"
+        data.message ||
+        "Server Error"
       );
 
     }
@@ -594,6 +919,7 @@ async function sendMessage(){
   }finally{
 
     userInput.disabled = false;
+
     sendBtn.disabled = false;
 
     userInput.focus();
@@ -604,7 +930,9 @@ async function sendMessage(){
 
 }
 
+/* ========================= */
 /* EVENTS */
+/* ========================= */
 
 sendBtn.addEventListener(
   "click",
@@ -629,9 +957,18 @@ userInput.addEventListener(
   }
 );
 
+newChatBtn.addEventListener(
+  "click",
+  createNewChat
+);
+
+/* ========================= */
+/* INIT */
+/* ========================= */
+
+createNewChat();
+
 </script>
 
-
-
- </body>
+</body>
 </html>
