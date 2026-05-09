@@ -1,87 +1,190 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
   <title>MEDLAB AI</title>
-  <link rel="stylesheet" href="ai.css">
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="ai.css" />
+
+  <link
+    href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
+    rel="stylesheet"
+  />
 </head>
+
 <body>
+
 <header class="page-header">
- 
+  <nav class="ai-nav">
+    <a href="#">MEDLAB AI</a>
+  </nav>
 </header>
+
 <main class="page-main">
+
   <div class="chat-container">
-    <div id="chat-box"></div>
+
+    <div id="chat-box">
+
+      <div class="message bot">
+        Hello 👋<br>
+        Ask me any medical question.
+      </div>
+
+    </div>
 
     <div class="input-box">
-      <input id="user-input" placeholder="Ask a medical question..." />
-      <button onclick="sendMessage()">Send</button>
+
+      <input
+        id="user-input"
+        type="text"
+        placeholder="Ask a medical question..."
+        autocomplete="off"
+      />
+
+      <button id="send-btn">
+        Send
+      </button>
+
     </div>
+
   </div>
+
 </main>
 
 <script>
-  async function sendMessage() {
-  const input = document.getElementById("user-input");
-  const chatBox = document.getElementById("chat-box");
-  const sendButton = document.querySelector(".input-box button");
 
-  const userText = input.value.trim();
-  if (!userText) return;
+const input = document.getElementById("user-input");
+const chatBox = document.getElementById("chat-box");
+const sendButton = document.getElementById("send-btn");
 
-  chatBox.innerHTML += `<div class="message user">${userText}</div>`;
-  input.value = "";
-  input.disabled = true;
-  sendButton.disabled = true;
-
-  const loadingId = `loading-${Date.now()}`;
-  chatBox.innerHTML += `
-    <div id="${loadingId}" class="message bot loading-message" aria-label="AI is typing">
-      <span class="loading-text">Thinking</span>
-      <div class="loading" aria-hidden="true">
-        <span></span><span></span><span></span>
-      </div>
-    </div>
-  `;
-  chatBox.scrollTop = chatBox.scrollHeight;
-
-  try {
-    const res = await fetch("/api/generate", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ prompt: userText }),
-    });
-
-    const data = await res.json();
-    console.log("AI RESPONSE:", data);
-
-    if (!res.ok) {
-      throw new Error(data.message || "Unable to get a response right now.");
-    }
-
-    const botReply =
-      (data.response && data.response.trim()) ||
-      "AI returned empty response";
-
-         document.getElementById(loadingId)?.remove();
-    chatBox.innerHTML += `<div class="message bot">${botReply}</div>`;
-  } catch (error) {
-
-    document.getElementById(loadingId)?.remove();
-    chatBox.innerHTML += `<div class="message bot">Error: ${error.message}</div>`;
-  } finally {
-    input.disabled = false;
-    sendButton.disabled = false;
-    input.focus();
-  }
-
+function scrollToBottom() {
   chatBox.scrollTop = chatBox.scrollHeight;
 }
 
+function createMessage(text, sender) {
+
+  const message = document.createElement("div");
+
+  message.className = `message ${sender}`;
+
+  message.textContent = text;
+
+  chatBox.appendChild(message);
+
+  scrollToBottom();
+}
+
+async function sendMessage() {
+
+  const userText = input.value.trim();
+
+  if (!userText) return;
+
+  createMessage(userText, "user");
+
+  input.value = "";
+
+  input.disabled = true;
+  sendButton.disabled = true;
+
+  // Loading Message
+  const loadingDiv = document.createElement("div");
+
+  loadingDiv.className = "message bot loading-message";
+
+  loadingDiv.innerHTML = `
+    <span class="loading-text">Thinking</span>
+
+    <div class="loading">
+      <span></span>
+      <span></span>
+      <span></span>
+    </div>
+  `;
+
+  chatBox.appendChild(loadingDiv);
+
+  scrollToBottom();
+
+  try {
+
+    const response = await fetch("/api/generate", {
+
+      method: "POST",
+
+      headers: {
+        "Content-Type": "application/json"
+      },
+
+      body: JSON.stringify({
+        prompt: userText
+      })
+
+    });
+
+    let data = {};
+
+    try {
+      data = await response.json();
+    } catch {
+      throw new Error("Invalid server response");
+    }
+
+    loadingDiv.remove();
+
+    if (!response.ok) {
+
+      throw new Error(
+        data.message ||
+        "Server error occurred"
+      );
+
+    }
+
+    const botReply =
+      data.response?.trim() ||
+      "No response received.";
+
+    createMessage(botReply, "bot");
+
+  } catch (error) {
+
+    loadingDiv.remove();
+
+    createMessage(
+      "Error: " + error.message,
+      "bot"
+    );
+
+    console.error(error);
+
+  } finally {
+
+    input.disabled = false;
+    sendButton.disabled = false;
+
+    input.focus();
+
+    scrollToBottom();
+  }
+}
+
+// Button Click
+sendButton.addEventListener("click", sendMessage);
+
+// Enter Key Support
+input.addEventListener("keydown", (e) => {
+
+  if (e.key === "Enter") {
+    sendMessage();
+  }
+
+});
+
 </script>
+
 </body>
 </html>
