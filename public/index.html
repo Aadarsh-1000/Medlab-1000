@@ -1,190 +1,752 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Supercharged AI Chat</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Poppins:wght@500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        /* --- CORE VARIABLES --- */
+        :root {
+            --primary: #4c8cff;
+            --primary-glow: rgba(76, 140, 255, 0.4);
+            --primary-light: #67c6ff;
+            --bg-deep: #04070f;
+            --glass-bg: rgba(12, 21, 36, 0.65);
+            --glass-border: rgba(255, 255, 255, 0.08);
+            --glass-highlight: rgba(255, 255, 255, 0.03);
+            --text-main: #eef4ff;
+            --text-muted: #9ca3af;
+            --bot-bubble: rgba(255, 255, 255, 0.06);
+            --user-bubble: linear-gradient(135deg, #2563eb, #4c8cff);
+            --font-ui: 'Inter', sans-serif;
+            --font-head: 'Poppins', sans-serif;
+            --font-code: 'JetBrains Mono', monospace;
+        }
 
-  <title>MEDLAB AI</title>
+        /* --- RESET & BASE --- */
+        * { box-sizing: border-box; outline: none; }
+        
+        body {
+            margin: 0;
+            font-family: var(--font-ui);
+            background-color: var(--bg-deep);
+            /* Complex animated background */
+            background-image: 
+                radial-gradient(circle at 15% 50%, rgba(76, 140, 255, 0.15), transparent 25%),
+                radial-gradient(circle at 85% 30%, rgba(147, 51, 234, 0.15), transparent 25%);
+            background-size: 100% 100%;
+            animation: breatheBackground 15s ease-in-out infinite alternate;
+            color: var(--text-main);
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
 
-  <link rel="stylesheet" href="ai.css" />
+        @keyframes breatheBackground {
+            0% { background-position: 0% 50%; }
+            100% { background-position: 100% 50%; }
+        }
 
-  <link
-    href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
-    rel="stylesheet"
-  />
+        /* --- SCROLLBAR --- */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.1); border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.2); }
+
+        /* --- HEADER / NAV --- */
+        header {
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 24px;
+            border-bottom: 1px solid var(--glass-border);
+            background: rgba(4, 7, 15, 0.5);
+            backdrop-filter: blur(10px);
+            z-index: 10;
+        }
+
+        .brand {
+            font-family: var(--font-head);
+            font-weight: 700;
+            font-size: 1.2rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: linear-gradient(90deg, #fff, #94a3b8);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .model-selector {
+            display: flex;
+            background: rgba(255,255,255,0.05);
+            padding: 4px;
+            border-radius: 12px;
+            border: 1px solid var(--glass-border);
+        }
+
+        .model-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            padding: 6px 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            font-weight: 600;
+            transition: all 0.2s ease;
+        }
+
+        .model-btn.active {
+            background: rgba(255,255,255,0.1);
+            color: #fff;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .user-actions {
+            display: flex;
+            gap: 12px;
+        }
+
+        /* --- MAIN CHAT AREA --- */
+        main {
+            flex: 1;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            max-width: 1000px;
+            width: 100%;
+            margin: 0 auto;
+        }
+
+        /* --- WELCOME SCREEN (HERO) --- */
+        #welcome-screen {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 40px;
+            transition: opacity 0.4s ease;
+        }
+
+        .hero-logo {
+            width: 64px;
+            height: 64px;
+            background: linear-gradient(135deg, var(--primary), #9333ea);
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 24px;
+            box-shadow: 0 10px 30px -10px var(--primary-glow);
+        }
+
+        .hero-title {
+            font-family: var(--font-head);
+            font-size: 2rem;
+            margin-bottom: 12px;
+            background: linear-gradient(180deg, #fff, #94a3b8);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .hero-subtitle {
+            color: var(--text-muted);
+            max-width: 500px;
+            margin-bottom: 40px;
+            line-height: 1.6;
+        }
+
+        .suggestion-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            width: 100%;
+            max-width: 600px;
+        }
+
+        .suggestion-card {
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            padding: 16px;
+            border-radius: 12px;
+            text-align: left;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .suggestion-card:hover {
+            background: rgba(255,255,255,0.08);
+            border-color: var(--primary);
+            transform: translateY(-2px);
+        }
+
+        .suggestion-title { font-weight: 600; font-size: 0.9rem; margin-bottom: 4px; color: #fff; }
+        .suggestion-desc { font-size: 0.8rem; color: var(--text-muted); }
+
+        /* --- CHAT HISTORY --- */
+        #chat-container {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px 0 120px 0; /* Bottom padding for floating input */
+            scroll-behavior: smooth;
+            display: none; /* Hidden until chat starts */
+            opacity: 0;
+            transition: opacity 0.5s ease;
+        }
+
+        #chat-container.active {
+            display: block;
+            opacity: 1;
+        }
+
+        .message-row {
+            display: flex;
+            padding: 24px;
+            gap: 16px;
+            border-bottom: 1px solid transparent;
+            animation: fadeIn 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
+        }
+
+        .message-row:hover {
+            background: rgba(255,255,255,0.01);
+        }
+
+        .avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 0.9rem;
+        }
+
+        .avatar.ai {
+            background: linear-gradient(135deg, #10a37f, #1a7f5a); /* ChatGPT-ish green base */
+            color: white;
+            box-shadow: 0 4px 12px rgba(16, 163, 127, 0.2);
+        }
+        
+        /* Dynamic Avatar Colors based on Model */
+        .avatar.ai.gemini { background: linear-gradient(135deg, #4285f4, #9b72cb); }
+        .avatar.ai.claude { background: linear-gradient(135deg, #d97757, #cc785c); }
+        .avatar.ai.groq { background: linear-gradient(135deg, #f55036, #ff9100); }
+
+        .avatar.user {
+            background: #334155;
+            color: #cbd5e1;
+        }
+
+        .message-content {
+            flex: 1;
+            font-size: 1rem;
+            line-height: 1.6;
+            color: #e2e8f0;
+            padding-top: 4px;
+            min-width: 0; /* Prevents overflow */
+        }
+
+        .message-content p { margin: 0 0 12px 0; }
+        .message-content p:last-child { margin-bottom: 0; }
+
+        /* Code Block Styling */
+        pre {
+            background: #0d1117;
+            border: 1px solid #30363d;
+            border-radius: 8px;
+            padding: 12px;
+            overflow-x: auto;
+            font-family: var(--font-code);
+            font-size: 0.85rem;
+            color: #c9d1d9;
+            margin: 12px 0;
+            position: relative;
+        }
+        
+        .code-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-size: 0.75rem;
+            color: #8b949e;
+            border-bottom: 1px solid #30363d;
+            padding-bottom: 4px;
+        }
+
+        /* --- INPUT AREA (Floating) --- */
+        .input-wrapper {
+            position: absolute;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 90%;
+            max-width: 800px;
+            z-index: 50;
+        }
+
+        .input-container {
+            background: rgba(20, 25, 40, 0.85);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--glass-border);
+            box-shadow: 
+                0 4px 20px rgba(0,0,0,0.4),
+                0 0 0 1px rgba(255,255,255,0.05),
+                inset 0 1px 0 rgba(255,255,255,0.1);
+            border-radius: 16px;
+            padding: 10px 16px;
+            display: flex;
+            align-items: flex-end;
+            gap: 12px;
+            transition: border-color 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .input-container:focus-within {
+            border-color: rgba(76, 140, 255, 0.4);
+            box-shadow: 
+                0 8px 30px rgba(0,0,0,0.5),
+                0 0 0 1px rgba(76, 140, 255, 0.2),
+                inset 0 1px 0 rgba(255,255,255,0.1);
+        }
+
+        .attach-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            padding: 8px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .attach-btn:hover { background: rgba(255,255,255,0.1); color: #fff; }
+
+        textarea {
+            flex: 1;
+            background: transparent;
+            border: none;
+            color: #fff;
+            resize: none;
+            font-family: var(--font-ui);
+            font-size: 1rem;
+            line-height: 1.5;
+            max-height: 200px;
+            padding: 8px 0;
+            overflow-y: hidden; /* Hide scrollbar initially */
+        }
+
+        textarea::placeholder { color: rgba(255,255,255,0.3); }
+
+        .send-btn {
+            background: var(--primary);
+            border: none;
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-bottom: 2px;
+        }
+
+        .send-btn:hover { background: var(--primary-light); transform: scale(1.05); }
+        .send-btn:disabled { background: #334155; cursor: not-allowed; opacity: 0.6; }
+        .send-btn svg { fill: white; width: 18px; height: 18px; }
+
+        .disclaimer {
+            text-align: center;
+            font-size: 0.75rem;
+            color: rgba(255,255,255,0.3);
+            margin-top: 10px;
+        }
+
+        /* --- LOADING ANIMATION --- */
+        .typing-indicator {
+            display: flex;
+            gap: 4px;
+            padding: 4px 0;
+        }
+
+        .dot {
+            width: 6px;
+            height: 6px;
+            background: var(--text-muted);
+            border-radius: 50%;
+            animation: bounce 1.4s infinite ease-in-out both;
+        }
+
+        .dot:nth-child(1) { animation-delay: -0.32s; }
+        .dot:nth-child(2) { animation-delay: -0.16s; }
+
+        @keyframes bounce {
+            0%, 80%, 100% { transform: scale(0); }
+            40% { transform: scale(1); }
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* --- RESPONSIVE --- */
+        @media (max-width: 600px) {
+            .suggestion-grid { grid-template-columns: 1fr; }
+            .model-selector { display: none; } /* Hide model switch on mobile for space */
+            .input-wrapper { bottom: 10px; width: 95%; }
+            header { padding: 0 16px; }
+        }
+    </style>
 </head>
-
 <body>
 
-<header class="page-header">
-  <nav class="ai-nav">
-    <a href="#">MEDLAB AI</a>
-  </nav>
-</header>
+    <!-- Header -->
+    <header>
+        <div class="brand">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="url(#grad1)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <defs>
+                    <linearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="0%">
+                        <stop offset="0%" style="stop-color:#4c8cff;stop-opacity:1" />
+                        <stop offset="100%" style="stop-color:#9333ea;stop-opacity:1" />
+                    </linearGradient>
+                </defs>
+                <path d="M12 2a10 10 0 1 0 10 10H12V2z"></path>
+                <path d="M12 12 2.1 12a10.1 10.1 0 0 0 1.9 4.9L12 12z"></path>
+                <path d="M12 12V2.1a10.1 10.1 0 0 0-4.9 1.9L12 12z"></path>
+            </svg>
+            <span>NexusAI</span>
+        </div>
 
-<main class="page-main">
+        <div class="model-selector" id="modelSelector">
+            <button class="model-btn active" data-model="gpt">GPT-4o</button>
+            <button class="model-btn" data-model="claude">Claude 3.5</button>
+            <button class="model-btn" data-model="gemini">Gemini 1.5</button>
+            <button class="model-btn" data-model="groq">Groq</button>
+        </div>
 
-  <div class="chat-container">
+        <div class="user-actions">
+            <button class="model-btn" title="New Chat" onclick="window.location.reload()">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path>
+                    <path d="M3 3v5h5"></path>
+                    <path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"></path>
+                    <path d="M16 16h5v5"></path>
+                </svg>
+            </button>
+            <div class="avatar user" style="width:32px; height:32px; font-size:0.8rem;">U</div>
+        </div>
+    </header>
 
-    <div id="chat-box">
+    <main>
+        <!-- Welcome / Hero Screen -->
+        <div id="welcome-screen">
+            <div class="hero-logo">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="white">
+                    <path d="M12 2L2 7l10 5 10-5-10-5zm0 9l2.5-1.25L12 8.5l-2.5 1.25L12 11zm0 2.5l-5-2.5-5 2.5L12 22l10-8.5-5-2.5-5 2.5z"/>
+                </svg>
+            </div>
+            <h1 class="hero-title">How can I help you today?</h1>
+            <p class="hero-subtitle">Experience the fusion of top-tier AI models. Select a model or start typing.</p>
+            
+            <div class="suggestion-grid">
+                <div class="suggestion-card" onclick="setInput('Write a Python script to scrape a website')">
+                    <div class="suggestion-title">Coding Assistant</div>
+                    <div class="suggestion-desc">Write a Python script to scrape a website</div>
+                </div>
+                <div class="suggestion-card" onclick="setInput('Explain quantum computing like I am 5')">
+                    <div class="suggestion-title">Simple Concepts</div>
+                    <div class="suggestion-desc">Explain quantum computing like I am 5</div>
+                </div>
+                <div class="suggestion-card" onclick="setInput('Draft a professional email to my boss asking for a raise')">
+                    <div class="suggestion-title">Creative Writing</div>
+                    <div class="suggestion-desc">Draft a professional email asking for a raise</div>
+                </div>
+                <div class="suggestion-card" onclick="setInput('Analyze the themes of Romeo and Juliet')">
+                    <div class="suggestion-title">Analysis</div>
+                    <div class="suggestion-desc">Analyze the themes of Romeo and Juliet</div>
+                </div>
+            </div>
+        </div>
 
-      <div class="message bot">
-        Hello 👋<br>
-        Ask me any medical question.
-      </div>
+        <!-- Chat History Container -->
+        <div id="chat-container">
+            <!-- Messages will be injected here -->
+        </div>
 
-    </div>
+        <!-- Floating Input Area -->
+        <div class="input-wrapper">
+            <div class="input-container">
+                <button class="attach-btn" title="Attach file">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path>
+                    </svg>
+                </button>
+                <textarea id="user-input" rows="1" placeholder="Message NexusAI..."></textarea>
+                <button id="send-btn" class="send-btn" disabled>
+                    <svg viewBox="0 0 24 24">
+                        <line x1="22" y1="2" x2="11" y2="13"></line>
+                        <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                    </svg>
+                </button>
+            </div>
+            <div class="disclaimer">NexusAI can make mistakes. Consider checking important information.</div>
+        </div>
+    </main>
 
-    <div class="input-box">
+    <script>
+        // --- CONFIGURATION & STATE ---
+        const chatContainer = document.getElementById('chat-container');
+        const welcomeScreen = document.getElementById('welcome-screen');
+        const userInput = document.getElementById('user-input');
+        const sendBtn = document.getElementById('send-btn');
+        const modelBtns = document.querySelectorAll('.model-btn[data-model]');
+        
+        let currentModel = 'gpt';
+        let isGenerating = false;
 
-      <input
-        id="user-input"
-        type="text"
-        placeholder="Ask a medical question..."
-        autocomplete="off"
-      />
+        // --- EVENT LISTENERS ---
 
-      <button id="send-btn">
-        Send
-      </button>
+        // Model Switcher Logic
+        modelBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                modelBtns.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                currentModel = btn.dataset.model;
+            });
+        });
 
-    </div>
+        // Textarea Auto-Resize
+        userInput.addEventListener('input', function() {
+            this.style.height = 'auto';
+            this.style.height = (this.scrollHeight) + 'px';
+            if(this.value.trim().length > 0) {
+                sendBtn.removeAttribute('disabled');
+            } else {
+                sendBtn.setAttribute('disabled', 'true');
+            }
+        });
 
-  </div>
+        // Send on Enter (shift+enter for newline)
+        userInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                handleSend();
+            }
+        });
 
-</main>
+        sendBtn.addEventListener('click', handleSend);
 
-<script>
+        // --- CORE FUNCTIONS ---
 
-const input = document.getElementById("user-input");
-const chatBox = document.getElementById("chat-box");
-const sendButton = document.getElementById("send-btn");
+        function setInput(text) {
+            userInput.value = text;
+            userInput.style.height = 'auto'; // Reset height calc
+            userInput.style.height = (userInput.scrollHeight) + 'px'; // Recalculate
+            userInput.focus();
+            sendBtn.removeAttribute('disabled');
+        }
 
-function scrollToBottom() {
-  chatBox.scrollTop = chatBox.scrollHeight;
-}
+        function handleSend() {
+            const text = userInput.value.trim();
+            if (!text || isGenerating) return;
 
-function createMessage(text, sender) {
+            // UI Transition
+            startChat();
 
-  const message = document.createElement("div");
+            // 1. Add User Message
+            addMessage(text, 'user');
+            userInput.value = '';
+            userInput.style.height = 'auto';
+            sendBtn.setAttribute('disabled', 'true');
+            isGenerating = true;
 
-  message.className = `message ${sender}`;
+            // 2. Show Loading/Thinking
+            const loaderId = addLoader();
 
-  message.textContent = text;
+            // 3. Simulate AI Response
+            setTimeout(() => {
+                removeLoader(loaderId);
+                const response = generateMockResponse(text, currentModel);
+                addMessage(response, 'ai', true); // true = typewriter effect
+                isGenerating = false;
+            }, 1500 + Math.random() * 1000); // Random delay 1.5s - 2.5s
+        }
 
-  chatBox.appendChild(message);
+        function startChat() {
+            welcomeScreen.style.opacity = '0';
+            setTimeout(() => {
+                welcomeScreen.style.display = 'none';
+                chatContainer.classList.add('active');
+            }, 400);
+        }
 
-  scrollToBottom();
-}
+        function addMessage(content, sender, animate = false) {
+            const row = document.createElement('div');
+            row.className = 'message-row';
+            
+            const avatar = document.createElement('div');
+            avatar.className = `avatar ${sender}`;
+            
+            // Add specific model class to avatar for color change
+            if(sender === 'ai') {
+                avatar.classList.add(currentModel);
+                avatar.innerHTML = getAvatarIcon(currentModel);
+            } else {
+                avatar.textContent = 'U';
+            }
 
-async function sendMessage() {
+            const msgContent = document.createElement('div');
+            msgContent.className = 'message-content';
 
-  const userText = input.value.trim();
+            if (animate) {
+                // Content is empty initially, filled by typewriter
+                row.appendChild(avatar);
+                row.appendChild(msgContent);
+                chatContainer.appendChild(row);
+                scrollToBottom();
+                typeWriter(msgContent, content);
+            } else {
+                msgContent.innerHTML = formatText(content);
+                row.appendChild(avatar);
+                row.appendChild(msgContent);
+                chatContainer.appendChild(row);
+                scrollToBottom();
+            }
+        }
 
-  if (!userText) return;
+        function addLoader() {
+            const id = 'loader-' + Date.now();
+            const row = document.createElement('div');
+            row.className = 'message-row';
+            row.id = id;
 
-  createMessage(userText, "user");
+            const avatar = document.createElement('div');
+            avatar.className = `avatar ai ${currentModel}`;
+            avatar.innerHTML = getAvatarIcon(currentModel);
 
-  input.value = "";
+            const content = document.createElement('div');
+            content.className = 'message-content';
+            content.innerHTML = `
+                <div class="typing-indicator">
+                    <div class="dot"></div>
+                    <div class="dot"></div>
+                    <div class="dot"></div>
+                </div>
+            `;
 
-  input.disabled = true;
-  sendButton.disabled = true;
+            row.appendChild(avatar);
+            row.appendChild(content);
+            chatContainer.appendChild(row);
+            scrollToBottom();
+            return id;
+        }
 
-  // Loading Message
-  const loadingDiv = document.createElement("div");
+        function removeLoader(id) {
+            const el = document.getElementById(id);
+            if (el) el.remove();
+        }
 
-  loadingDiv.className = "message bot loading-message";
+        // --- UTILITIES ---
 
-  loadingDiv.innerHTML = `
-    <span class="loading-text">Thinking</span>
+        function typeWriter(element, text) {
+            let i = 0;
+            const speed = 15; // ms per char
+            
+            // Handle simple parsing for typewriter (skip HTML tags for now, just append raw)
+            // A full markdown parser is too complex for this demo, so we use a simple approach:
+            // We format the HTML first, then stream it in chunks. 
+            // For smoother effect in this demo, we will stream text then format at the end, 
+            // or just stream chunks of formatted HTML. Let's go with chunk streaming.
+            
+            element.innerHTML = formatText(text); // Pre-format for simplicity
+            element.style.opacity = 0;
+            element.style.transform = 'translateY(10px)';
+            element.style.transition = 'opacity 0.5s, transform 0.5s';
+            
+            // Fade in effect instead of char-by-char to avoid breaking HTML layout during render
+            requestAnimationFrame(() => {
+                element.style.opacity = 1;
+                element.style.transform = 'translateY(0)';
+            });
+            scrollToBottom();
+        }
 
-    <div class="loading">
-      <span></span>
-      <span></span>
-      <span></span>
-    </div>
-  `;
+        // Simple formatter for code blocks and bold text
+        function formatText(text) {
+            // Escape HTML first
+            let safeText = text
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;");
 
-  chatBox.appendChild(loadingDiv);
+            // Code Blocks ```code```
+            safeText = safeText.replace(/```([\s\S]*?)```/g, function(match, code) {
+                return `<pre><div class="code-header">Code</div><code>${code.trim()}</code></pre>`;
+            });
 
-  scrollToBottom();
+            // Bold **text**
+            safeText = safeText.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+            
+            // Line breaks
+            safeText = safeText.replace(/\n/g, '<br>');
 
-  try {
+            return safeText;
+        }
 
-    const response = await fetch("/api/generate", {
+        function scrollToBottom() {
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
 
-      method: "POST",
+        function getAvatarIcon(model) {
+            // SVG Paths for logos
+            const icons = {
+                gpt: '<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M22.2819 9.8211a5.9847 5.9847 0 0 0-.5157-4.9108 6.0462 6.0462 0 0 0-6.5098-2.9A6.0651 6.0651 0 0 0 4.9807 4.1818a5.9847 5.9847 0 0 0-3.9977 2.9 6.0462 6.0462 0 0 0 .7427 7.0966 5.98 5.98 0 0 0 .511 4.9107 6.051 6.051 0 0 0 6.5146 2.9001A5.9847 5.9847 0 0 0 13.2599 24a6.0557 6.0557 0 0 0 5.7718-4.2058 5.9894 5.9894 0 0 0 3.9977-2.9001 6.0557 6.0557 0 0 0-.7475-7.0729zm-9.022 12.6081a4.4755 4.4755 0 0 1-2.8764-1.0408l.1419-.0804 4.7783-2.7582a.7948.7948 0 0 0 .3927-.6813v-6.7369l2.02 1.1686a.071.071 0 0 1 .038.052v5.5826a4.504 4.504 0 0 1-4.4945 4.4944zm-9.6607-4.1254a4.4708 4.4708 0 0 1-.5346-3.0137l.142.0852 4.783 2.7582a.7712.7712 0 0 0 .7806 0l5.8428-3.3685v2.3324a.0804.0804 0 0 1-.0332.0615L9.74 19.9502a4.4992 4.4992 0 0 1-6.1408-1.6464zM2.3408 7.8956a4.485 4.485 0 0 1 2.3655-1.9728V11.6a.7664.7664 0 0 0 .3879.6765l5.8144 3.3543-2.0201 1.1685a.0757.0757 0 0 1-.071 0l-4.8303-2.7865A4.504 4.504 0 0 1 2.3408 7.8956zm16.5963 3.8558L13.1038 8.364 15.1192 7.2a.0757.0757 0 0 1 .071 0l4.8303 2.7913a4.4944 4.4944 0 0 1-.6765 8.1042v-5.6772a.79.79 0 0 0-.407-.667zm2.0107-3.0231l-.142-.0852-4.7735-2.7818a.7759.7759 0 0 0-.7854 0L9.409 9.2297V6.8974a.0662.0662 0 0 1 .0284-.0615l4.8303-2.7866a4.4992 4.4992 0 0 1 6.6802 4.66zM8.3065 12.863l-2.02-1.1638a.0804.0804 0 0 1-.038-.0567V6.0742a4.4992 4.4992 0 0 1 7.3757-3.4537l-.142.0805L8.704 5.459a.7948.7948 0 0 0-.3927.6813zm1.0976-2.3654l2.602-1.4998 2.6069 1.4998v2.9994l-2.5974 1.4997-2.6067-1.4997z"/></svg>',
+                claude: '<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M17.304 3.541l-5.29 17.423h-3.207L14.1 3.541zM6.52 4.724L2.066 17.527H5.01l2.27-7.085 1.956 6.13h3.18L9.33 4.724zm12.28 3.36l-3.582 11.356h3.07l.674-2.305h3.455l.69 2.305h3.142l-3.653-11.356zm-.297 6.805l1.05-3.597 1.11 3.597z"/></svg>',
+                gemini: '<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-5-9h10v2H7z"/></svg>',
+                groq: '<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="10" /></svg>'
+            };
+            return icons[model] || icons.gpt;
+        }
 
-      headers: {
-        "Content-Type": "application/json"
-      },
+        function generateMockResponse(input, model) {
+            const lower = input.toLowerCase();
+            
+            // Mock Logic to simulate different models
+            const responses = [
+                `Here is a python script based on your request:\n\n\`\`\`python\nimport requests\nfrom bs4 import BeautifulSoup\n\ndef scrape_site(url):\n    response = requests.get(url)\n    if response.status_code == 200:\n        soup = BeautifulSoup(response.text, 'html.parser')\n        return soup.title.string\n    return None\n\nprint(scrape_site('https://example.com'))\n\`\`\`\n\nLet me know if you need specific tags extracted.`,
+                `Quantum computing is like having a super-fast maze solver. While a regular computer tries one path at a time, a quantum computer can explore **all paths simultaneously**. It uses something called "qubits" instead of normal bits.`,
+                `Subject: Request for Salary Review\n\nDear [Manager's Name],\n\nI would like to request a meeting to discuss my current compensation and role. Over the past year, I have [Achievement 1] and [Achievement 2].\n\nI believe my contributions align with the market rate.\n\nBest,\n[Your Name]`,
+                `The themes of *Romeo and Juliet* include:\n\n1. **Love**: The driving force of the narrative.\n2. **Fate**: The idea that the stars are against them.\n3. **Conflict**: The feud between the Montagues and Capulets.\n\nWould you like a deeper analysis on any specific theme?`
+            ];
 
-      body: JSON.stringify({
-        prompt: userText
-      })
+            // Basic keyword matching
+            if (lower.includes('python') || lower.includes('code') || lower.includes('script')) return responses[0];
+            if (lower.includes('quantum')) return responses[1];
+            if (lower.includes('email') || lower.includes('raise')) return responses[2];
+            if (lower.includes('romeo') || lower.includes('theme')) return responses[3];
 
-    });
-
-    let data = {};
-
-    try {
-      data = await response.json();
-    } catch {
-      throw new Error("Invalid server response");
-    }
-
-    loadingDiv.remove();
-
-    if (!response.ok) {
-
-      throw new Error(
-        data.message ||
-        "Server error occurred"
-      );
-
-    }
-
-    const botReply =
-      data.response?.trim() ||
-      "No response received.";
-
-    createMessage(botReply, "bot");
-
-  } catch (error) {
-
-    loadingDiv.remove();
-
-    createMessage(
-      "Error: " + error.message,
-      "bot"
-    );
-
-    console.error(error);
-
-  } finally {
-
-    input.disabled = false;
-    sendButton.disabled = false;
-
-    input.focus();
-
-    scrollToBottom();
-  }
-}
-
-// Button Click
-sendButton.addEventListener("click", sendMessage);
-
-// Enter Key Support
-input.addEventListener("keydown", (e) => {
-
-  if (e.key === "Enter") {
-    sendMessage();
-  }
-
-});
-
-</script>
-
+            // Fallback generic response based on model persona
+            const personas = {
+                gpt: "That's an interesting question. Based on my analysis, here are a few thoughts on the matter...",
+                claude: "I'd be happy to help with that. Let's break this down step by step to ensure we cover all bases.",
+                gemini: "I can certainly assist with that. Here is a comprehensive overview generated specifically for your query.",
+                groq: "Processing complete. Here is the high-speed answer to your query."
+            };
+            
+            return personas[model] + " " + input;
+        }
+    </script>
 </body>
 </html>
