@@ -6,7 +6,9 @@ export default async function handler(req, res) {
     });
   }
 
+
   try {
+
 
     const { prompt } = req.body;
 
@@ -27,7 +29,18 @@ export default async function handler(req, res) {
           messages: [
             {
               role: "system",
-              content: "You are MEDLAB AI, a helpful medical assistant."
+
+              content: `
+                       You are MEDLAB AI, a helpful medical assistant.
+
+Always format responses using clean Markdown:
+- Use headings
+- Use bullet points
+- Use bold text
+- Use code blocks when needed
+- Keep formatting neat
+`
+
             },
             {
               role: "user",

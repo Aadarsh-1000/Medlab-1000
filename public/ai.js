@@ -42,7 +42,11 @@ async function sendMessage() {
       "AI returned empty response";
 
     document.getElementById(loadingId)?.remove();
-    chatBox.innerHTML += `<div class="message bot">${botReply}</div>`;
+    chatBox.innerHTML += `
+  <div class="message ai">
+    ${marked.parse(botReply)}
+  </div>
+`;
   } catch (error) {
 
     document.getElementById(loadingId)?.remove();
