@@ -13,8 +13,8 @@ export default async function handler(req, res) {
     return;
   }
 
-  const apiKey = process.env.GEMINI_API_KEY;
-  console.log("ENV TEST:", process.env.GEMINI_API_KEY);
+  const apiKey = process.env.GROQ_API_KEY;
+  console.log("ENV TEST:", process.env.GROQ_API_KEY);
 console.log("API EXISTS:", !!apiKey);
   if (!apiKey) {
     res.status(200).json({
