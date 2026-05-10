@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+
+  <title>MEDLAB AI</title>
+
+  <link
+    href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
+    rel="stylesheet"
+  />
+
+  <link rel="stylesheet" href="ai.css" />
+</head>
+
+<body>
+
+  <header class="page-header">
+    <nav class="ai-nav">
+      <h1>MEDLAB AI</h1>
+    </nav>
+  </header>
+
+  <main class="page-main">
+
+    <div class="chat-container">
+
+      <!-- CHAT -->
+
+      <div id="chat-box">
+
+        <div class="message bot">
+          Hello 👋 <br>
+          Ask me any medical question.
+        </div>
+
+      </div>
+
+      <!-- INPUT -->
+
+      <div class="messageBox">
+
+        <!-- FILE BUTTON -->
+
+        <div class="fileUploadWrapper">
+
+          <label for="file">
+
+            <svg viewBox="0 0 337 337" fill="none">
+
+              <circle
+                cx="168.5"
+                cy="168.5"
+                r="158.5"
+                stroke="#6c6c6c"
+                stroke-width="20"
+              />
+
+              <path
+                d="M167.759 79V259"
+                stroke="#6c6c6c"
+                stroke-width="25"
+                stroke-linecap="round"
+              />
+
+              <path
+                d="M79 167.138H259"
+                stroke="#6c6c6c"
+                stroke-width="25"
+                stroke-linecap="round"
+              />
+
+            </svg>
+
+            <span class="tooltip">
+              Attach file
+            </span>
+
+          </label>
+
+          <input type="file" id="file" />
+
+        </div>
+
+        <!-- INPUT -->
+
+        <input
+          required
+          placeholder="Ask a medical question..."
+          type="text"
+          id="messageInput"
+          autocomplete="off"
+        />
+
+        <!-- SEND BUTTON -->
+
+        <button id="sendButton">
+
+          <svg
+            viewBox="0 0 664 663"
+            fill="none"
+          >
+
+            <path
+              d="M646.999 331.5L314.999 663L266.669 614.67L516.839 364.5H17V298.5H516.839L266.669 48.33L314.999 0L646.999 331.5Z"
+              fill="none"
+            />
+
+          </svg>
+
+        </button>
+
+      </div>
+
+    </div>
+
+  </main>
+
+  <script>
+
+    const input = document.getElementById("messageInput");
+    const chatBox = document.getElementById("chat-box");
+    const sendButton = document.getElementById("sendButton");
+
+    function scrollToBottom() {
+      chatBox.scrollTop = chatBox.scrollHeight;
+    }
+
+    function createMessage(text, sender) {
+
+      const message = document.createElement("div");
+
+      message.className = `message ${sender}`;
+
+      message.textContent = text;
+
+      chatBox.appendChild(message);
+
+      scrollToBottom();
+    }
+
+    async function sendMessage() {
+
+      const userText = input.value.trim();
+
+      if (!userText) return;
+
+      createMessage(userText, "user");
+
+      input.value = "";
+
+      input.disabled = true;
+      sendButton.disabled = true;
+
+      // LOADING MESSAGE
+
+      const loadingDiv = document.createElement("div");
+
+      loadingDiv.className = "message bot";
+
+      loadingDiv.innerHTML = `
+        Thinking...
+      `;
+
+      chatBox.appendChild(loadingDiv);
+
+      scrollToBottom();
+
+      try {
+
+        const response = await fetch("/api/generate", {
+
+          method: "POST",
+
+          headers: {
+            "Content-Type": "application/json"
+          },
+
+          body: JSON.stringify({
+            prompt: userText
+          })
+
+        });
+
+        let data = {};
+
+        try {
+          data = await response.json();
+        } catch {
+          throw new Error("Invalid server response");
+        }
+
+        loadingDiv.remove();
+
+        if (!response.ok) {
+
+          throw new Error(
+            data.message ||
+            "Server error occurred"
+          );
+
+        }
+
+        const botReply =
+          data.response?.trim() ||
+          "No response received.";
+
+        createMessage(botReply, "bot");
+
+      } catch (error) {
+
+        loadingDiv.remove();
+
+        createMessage(
+          "Error: " + error.message,
+          "bot"
+        );
+
+        console.error(error);
+
+      } finally {
+
+        input.disabled = false;
+        sendButton.disabled = false;
+
+        input.focus();
+
+        scrollToBottom();
+      }
+    }
+
+    // BUTTON CLICK
+
+    sendButton.addEventListener("click", sendMessage);
+
+    // ENTER KEY
+
+    input.addEventListener("keydown", (e) => {
+
+      if (e.key === "Enter") {
+        sendMessage();
+      }
+
+    });
+
+  </script>
+
+</body>
+</html>

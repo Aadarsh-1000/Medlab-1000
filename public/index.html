@@ -1,250 +1,193 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MEDLAB AI</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r121/three.min.js"></script>
 
-  <title>MEDLAB AI</title>
-
-  <link
-    href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
-    rel="stylesheet"
-  />
-
-  <link rel="stylesheet" href="ai.css" />
+<script src="https://cdn.jsdelivr.net/npm/vanta@latest/dist/vanta.net.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap" rel="stylesheet">
 </head>
 
-<body>
-
-  <header class="page-header">
-    <nav class="ai-nav">
-      <h1>MEDLAB AI</h1>
-    </nav>
-  </header>
-
-  <main class="page-main">
-
-    <div class="chat-container">
-
-      <!-- CHAT -->
-
-      <div id="chat-box">
-
-        <div class="message bot">
-          Hello 👋 <br>
-          Ask me any medical question.
-        </div>
-
-      </div>
-
-      <!-- INPUT -->
-
-      <div class="messageBox">
-
-        <!-- FILE BUTTON -->
-
-        <div class="fileUploadWrapper">
-
-          <label for="file">
-
-            <svg viewBox="0 0 337 337" fill="none">
-
-              <circle
-                cx="168.5"
-                cy="168.5"
-                r="158.5"
-                stroke="#6c6c6c"
-                stroke-width="20"
-              />
-
-              <path
-                d="M167.759 79V259"
-                stroke="#6c6c6c"
-                stroke-width="25"
-                stroke-linecap="round"
-              />
-
-              <path
-                d="M79 167.138H259"
-                stroke="#6c6c6c"
-                stroke-width="25"
-                stroke-linecap="round"
-              />
-
-            </svg>
-
-            <span class="tooltip">
-              Attach file
-            </span>
-
-          </label>
-
-          <input type="file" id="file" />
-
-        </div>
-
-        <!-- INPUT -->
-
-        <input
-          required
-          placeholder="Ask a medical question..."
-          type="text"
-          id="messageInput"
-          autocomplete="off"
-        />
-
-        <!-- SEND BUTTON -->
-
-        <button id="sendButton">
-
-          <svg
-            viewBox="0 0 664 663"
-            fill="none"
-          >
-
-            <path
-              d="M646.999 331.5L314.999 663L266.669 614.67L516.839 364.5H17V298.5H516.839L266.669 48.33L314.999 0L646.999 331.5Z"
-              fill="none"
-            />
-
-          </svg>
-
-        </button>
-
-      </div>
-
-    </div>
-
-  </main>
-
-  <script>
-
-    const input = document.getElementById("messageInput");
-    const chatBox = document.getElementById("chat-box");
-    const sendButton = document.getElementById("sendButton");
-
-    function scrollToBottom() {
-      chatBox.scrollTop = chatBox.scrollHeight;
-    }
-
-    function createMessage(text, sender) {
-
-      const message = document.createElement("div");
-
-      message.className = `message ${sender}`;
-
-      message.textContent = text;
-
-      chatBox.appendChild(message);
-
-      scrollToBottom();
-    }
-
-    async function sendMessage() {
-
-      const userText = input.value.trim();
-
-      if (!userText) return;
-
-      createMessage(userText, "user");
-
-      input.value = "";
-
-      input.disabled = true;
-      sendButton.disabled = true;
-
-      // LOADING MESSAGE
-
-      const loadingDiv = document.createElement("div");
-
-      loadingDiv.className = "message bot";
-
-      loadingDiv.innerHTML = `
-        Thinking...
-      `;
-
-      chatBox.appendChild(loadingDiv);
-
-      scrollToBottom();
-
-      try {
-
-        const response = await fetch("/api/generate", {
-
-          method: "POST",
-
-          headers: {
-            "Content-Type": "application/json"
-          },
-
-          body: JSON.stringify({
-            prompt: userText
-          })
-
-        });
-
-        let data = {};
-
-        try {
-          data = await response.json();
-        } catch {
-          throw new Error("Invalid server response");
+<body id="vantajs">
+    <nav>
+    <div class="logo">MEDLAB<div class="hero">AI</div></div>
+  <a href="ai.html"><div class="button-1">Get Diagnosis→</div></a>
+  </nav>
+    <hr>
+      
+    <h1>Your <text>intelligent</text> medical companion</h1>
+    
+    <div class="sub-text">Ask Medlab-AI any medical question to get precise and accurate answers.</div>
+    <button>Start a conversation</button>
+    <style>
+        body{
+           background-color: #0a0a0b;
+           align-items: center;
+           text-align: center;
+           justify-content: center  ;
+              min-height: 100vh;
+              overflow: hidden;
+    overflow-x: hidden;
+           
         }
-
-        loadingDiv.remove();
-
-        if (!response.ok) {
-
-          throw new Error(
-            data.message ||
-            "Server error occurred"
-          );
-
+        
+        .button-1{
+            justify-self: end;
+            position: fixed;
+            right: 20px;
+            font-family: "poppins";
+            color: beige;
+            border: 2px solid white;
+            padding: 10px 10px;
+            border-radius: 10px;
         }
+        body{
+   
+   .logo,
+   h1,
+   .sub-text,
+   button,
+   hr{
+      position: relative;
+      z-index: 1;
+   }
+}
+        nav{
+            display: flex;
+            backdrop-filter: blur(20px);
+            background-color: transparent;
+            
+        }
+        body::before{
+    content: "";
 
-        const botReply =
-          data.response?.trim() ||
-          "No response received.";
+    position: fixed;
 
-        createMessage(botReply, "bot");
+    inset: 0;
 
-      } catch (error) {
+    background:
+    radial-gradient(
+        circle at center,
+        rgba(10,10,11,0.2),
+        rgba(10,10,11,0.75)
+    );
 
-        loadingDiv.remove();
+    z-index: 0;
 
-        createMessage(
-          "Error: " + error.message,
-          "bot"
-        );
+    pointer-events: none;
+}
+         .button-1:hover{
+            background-color: #6b6a72;
+         }
+       
+        h1{
+    font-size: 50px;
+    flex-wrap: wrap;
+    margin-top: 10%;
+    max-width: 30%;
+    font-weight: 300;
+    justify-self: center;
+    color: aliceblue;
+    line-height: 1.25;
+letter-spacing: -1px;
+    text-align: center;
+    font-family: "DM Serif Display";
 
-        console.error(error);
+    transition: 
+    transform 0.3s ease-in,
+    color 0.3s ease-in,
+    text-shadow 0.3s ease-in;
+}
+hr{
+   border: none;
+    height: 0.5px;
+    background: rgba(255,255,255,0.08);
+   
 
-      } finally {
+}
+.hero{
+    font-family: "DM Serif Display";
+    color: #c8b8ff;
+    font-size: 20px;
+    padding-left: 4px;
+    width: 50px;
+}
 
-        input.disabled = false;
-        sendButton.disabled = false;
+.logo{
+    display: flex;
+    padding-left: 10px;
+    display: flex;
+    padding-right: 10px;
+    font-size: 19px;
+    min-width: max-content;
+    padding: 10px;
+      font-family: "DM Serif Display";
+    text-align: left;
+    color: rgb(227, 227, 227);
+}
+h1:hover{
+    transform: translateY(-5px) scale(1.02);
 
-        input.focus();
+    color: white;
 
-        scrollToBottom();
-      }
-    }
+    text-shadow:
+    0 0 10px rgba(255,255,255,0.3),
+    0 0 30px rgba(124,58,237,0.5);
+}
+        
+        text{
+            color: #c8b8ff;
+            font-style: italic;
+        }
+        .sub-text{
+            color: #6b6a72;
+            justify-self: center;
+            font-family: "poppins";
+        }
+        button{
+            margin-top: 5%;
+            padding: 10px 12px;
+            color: white;
+            border-radius: 10px;
+            border: 2px solid #6b6a72;
+            background-color: #0a0a0b;
+            font-family: "poppins";
+            justify-self: center;
+        }
+        button:hover{
+            background: #6b6a72;
+            transition-duration: 200ms;
+        }
+    </style>
+    <script>
+        
+VANTA.NET({
+  el: "#vantajs",
 
-    // BUTTON CLICK
+  mouseControls: true,
+  touchControls: true,
+  gyroControls: false,
 
-    sendButton.addEventListener("click", sendMessage);
+  minHeight: 200,
+  minWidth: 200,
 
-    // ENTER KEY
+  scale: 1,
+  scaleMobile: 1,
+color: 0xc8b8ff,
+backgroundColor: 0x0a0a0b,
 
-    input.addEventListener("keydown", (e) => {
-
-      if (e.key === "Enter") {
-        sendMessage();
-      }
-
-    });
-
-  </script>
-
+ points: 8,
+maxDistance: 18,
+spacing: 20
+})
+</script>
+    </script>
 </body>
 </html>
