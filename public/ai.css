@@ -92,6 +92,15 @@ h1 {
 
 /* Input bar */
 .messageBox {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--surface2);
+  border: 0.5px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 10px 14px;
+  transition: border-color 0.2s, box-shadow 0.2s;
+ 
   position: fixed;
 
   bottom: 20px;
@@ -102,7 +111,9 @@ h1 {
   width: min(900px, 92%);
 
   z-index: 1000;
+
 }
+
 .messageBox:focus-within {
   border-color: var(--border-hover);
   box-shadow: 0 0 0 3px rgba(200,184,255,0.06);
