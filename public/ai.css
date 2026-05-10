@@ -1,6 +1,6 @@
 @font-face {
   font-family: 'Recoleta';
-  src: url(../public/fonts/Recoleta-RegularDEMO.otf) format('otf');
+  src: url(../public/fonts/Recoleta-RegularDEMO.otf) format('opentype');
   font-weight: normal;
   font-style: normal;
 }
