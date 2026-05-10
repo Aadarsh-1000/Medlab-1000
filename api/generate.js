@@ -25,10 +25,15 @@ export default async function handler(req, res) {
           model: "llama-3.1-8b-instant",
 
           messages: [
-            {
-              role: "system",
-              content: "You are MEDLAB AI, a helpful medical assistant."
-            },
+          {
+  role: "system",
+  content: `You are MEDLAB AI, a helpful medical assistant.
+
+Always answer in clean formatting.
+Always organize responses clearly.
+Use headings, bullet points, and spacing.
+Keep answers professional, concise, and easy to read.`
+},
             {
               role: "user",
               content: prompt
