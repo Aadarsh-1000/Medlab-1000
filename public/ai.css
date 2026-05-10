@@ -1,174 +1,183 @@
-@font-face {
-  font-family: 'Recoleta';
-  src: url('/fonts/Recoleta-RegularDEMO.otf') format('opentype');
-  font-weight: normal;
-  font-style: normal;
+@import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&display=swap');
+
+:root {
+  --bg: #0a0a0b;
+  --surface: #111113;
+  --surface2: #18181b;
+  --border: rgba(255,255,255,0.07);
+  --border-hover: rgba(255,255,255,0.14);
+  --text: #f0eee8;
+  --muted: #6b6a72;
+  --accent: #c8b8ff;
+  --accent-dim: rgba(200,184,255,0.12);
+  --user-bg: #e8e4f0;
+  --user-text: #1a1825;
+  --radius-md: 18px;
+  --radius-lg: 24px;
 }
 
-
-
-
-body{
-  font-family: "Recoleta DEMO";
-  background-color: rgb(0, 0, 0);
-  font-size: 20px;
-   width: min(900px, 92%);
+body {
+  font-family: 'DM Sans', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 14.5px;
+  width: min(900px, 92%);
   margin: 40px auto;
-  overflow-x: scroll;
 }
-h1{
-  color: white;
+
+h1 {
+  font-family: 'DM Serif Display', serif;
+  color: var(--text);
   text-align: center;
-}
-  /* From Uiverse.io by vinodjangid07 */ 
-.messageBox {
-  width: fit-content;
-  position: fixed;
-  height: 40px;
-    font-family: "Recoleta DEMO";
-   bottom: 20px;
-  display: flex;
-  align-items: center;
-  justify-self: center;
-  align-items: center;
-  justify-content: center;
-  background-color: #2d2d2d;
-  padding: 0 15px;
-  border-radius: 10px;
-  border: 1px solid rgb(63, 63, 63);
-}
-.messageBox:focus-within {
-  border: 1px solid rgb(110, 110, 110);
-}
-.fileUploadWrapper {
-  width: fit-content;
-  height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-   font-family: "Recoleta DEMO";
+  font-size: 32px;
+  letter-spacing: -0.02em;
+  font-weight: 400;
 }
 
-#file {
-  display: none;
-}
-.fileUploadWrapper label {
-  cursor: pointer;
-  width: fit-content;
-  height: fit-content;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  position: relative;
-}
-.fileUploadWrapper label svg {
-  height: 18px;
-}
-.fileUploadWrapper label svg path {
-  transition: all 0.3s;
-}
-.fileUploadWrapper label svg circle {
-  transition: all 0.3s;
-}
-.fileUploadWrapper label:hover svg path {
-  stroke: #fff;
-}
-.fileUploadWrapper label:hover svg circle {
-  stroke: #fff;
-  fill: #3c3c3c;
-}
-.fileUploadWrapper label:hover .tooltip {
-  display: block;
-  opacity: 1;
-}
-.tooltip {
-  position: absolute;
-  top: -40px;
-  display: none;
-  opacity: 0;
-  color: white;
-  font-size: 10px;
-  text-wrap: nowrap;
-  background-color: #000;
-  padding: 6px 10px;
-  border: 1px solid #3c3c3c;
-  border-radius: 5px;
-  box-shadow: 0px 5px 10px rgba(0, 0, 0, 0.596);
-  transition: all 0.3s;
-}
-#messageInput {
-  width: 200px;
-  height: 100%;
-  background-color: transparent;
-  outline: none;
-    font-family: "Recoleta DEMO";
-  border: none;
-  padding-left: 10px;
-  color: white;
-}
-#messageInput:focus ~ #sendButton svg path,
-#messageInput:valid ~ #sendButton svg path {
-  fill: #3c3c3c;
-  stroke: white;
-}
-
-#sendButton {
-  width: fit-content;
-  height: 100%;
-  background-color: transparent;
-  outline: none;
-  border: none;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: all 0.3s;
-}
-#sendButton svg {
-  height: 18px;
-  transition: all 0.3s;
-}
-#sendButton svg path {
-  transition: all 0.3s;
-}
-#sendButton:hover svg path {
-  fill: #3c3c3c;
-  stroke: white;
-}
-
-/* Chat Box */
+/* Chat box */
 #chat-box {
   display: flex;
   flex-direction: column;
-  gap: 14px;
-  padding: 20px;
+  gap: 20px;
+  padding: 28px 24px;
   overflow-y: auto;
 }
 
-/* Base Message */
+/* Message rows */
+.message-row {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-width: 72%;
+  animation: fadeSlide 0.2s ease;
+}
+
+@keyframes fadeSlide {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.message-row.user { align-self: flex-end; align-items: flex-end; }
+.message-row.bot  { align-self: flex-start; align-items: flex-start; }
+
 .message {
-  max-width: 75%;
-  padding: 14px 18px;
-  border-radius: 18px;
-  font-size: 15px;
-  line-height: 1.5;
-  word-wrap: break-word;
+  padding: 13px 17px;
+  line-height: 1.65;
+  font-size: 14.5px;
+  word-break: break-word;
+  position: relative;
 }
 
-/* USER MESSAGE -> RIGHT */
 .message.user {
-  align-self: flex-end;
-  background: #bebdc9;
-  color: rgb(31, 31, 31);
-  border-bottom-right-radius: 6px;
+  background: var(--user-bg);
+  color: var(--user-text);
+  border-radius: var(--radius-md) var(--radius-md) 4px var(--radius-md);
 }
 
-/* AI MESSAGE -> LEFT */
 .message.bot {
-  align-self: flex-start;
-  max-width: 75%;
-  background: rgba(255,255,255,0.08);
-  backdrop-filter: blur(12px);
-  color: white;
-  border-bottom-left-radius: 6px;
+  background: var(--surface2);
+  border: 0.5px solid var(--border);
+  color: var(--text);
+  border-radius: var(--radius-md) var(--radius-md) var(--radius-md) 4px;
 }
+
+.message.bot::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(135deg, var(--accent-dim) 0%, transparent 60%);
+  pointer-events: none;
+}
+
+/* Input bar */
+.messageBox {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--surface2);
+  border: 0.5px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 10px 14px;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.messageBox:focus-within {
+  border-color: var(--border-hover);
+  box-shadow: 0 0 0 3px rgba(200,184,255,0.06);
+}
+
+.fileUploadWrapper {
+  display: flex;
+  align-items: center;
+}
+
+#file { display: none; }
+
+.fileUploadWrapper label {
+  cursor: pointer;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  color: var(--muted);
+  position: relative;
+  transition: background 0.15s, color 0.15s;
+}
+
+.fileUploadWrapper label:hover {
+  background: rgba(255,255,255,0.06);
+  color: var(--text);
+}
+
+.tooltip {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--surface);
+  border: 0.5px solid var(--border-hover);
+  color: var(--text);
+  font-size: 11px;
+  padding: 5px 9px;
+  border-radius: 6px;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.15s;
+}
+
+.fileUploadWrapper label:hover .tooltip { opacity: 1; }
+
+#messageInput {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: var(--text);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 14.5px;
+  caret-color: var(--accent);
+}
+
+#messageInput::placeholder { color: var(--muted); }
+
+#sendButton {
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  background: var(--accent);
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #1a1825;
+  transition: background 0.15s, transform 0.1s;
+  flex-shrink: 0;
+}
+
+#sendButton:hover  { background: #d8caff; transform: scale(1.05); }
+#sendButton:active { transform: scale(0.97); }
