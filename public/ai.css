@@ -1,3 +1,13 @@
+@font-face {
+  font-family: 'Recoleta';
+  src: url(../public/fonts/Recoleta-RegularDEMO.otf) format('otf');
+  font-weight: normal;
+  font-style: normal;
+}
+
+
+
+
 body{
   font-family: "Recoleta DEMO";
   background-color: rgb(0, 0, 0);
