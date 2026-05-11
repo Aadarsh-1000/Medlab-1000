@@ -65,7 +65,7 @@ h1 {
   line-height: 1.65;
   font-size: 14.5px;
   word-break: break-word;
-  position: relative;
+      position: relative;
 }
 .button-1{
   position: fixed;
