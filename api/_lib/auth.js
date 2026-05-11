@@ -24,9 +24,18 @@ function cookieOptions() {
   return [
     "Path=/",
     "HttpOnly",
-    "SameSite=Lax",
-    isProd ? "Secure" : ""
-  ].filter(Boolean).join("; ");
+
+    // REQUIRED FOR GOOGLE OAUTH ON VERCEL
+    isProd ? "Secure" : "",
+
+    // IMPORTANT FIX
+    isProd
+      ? "SameSite=None"
+      : "SameSite=Lax"
+
+  ]
+    .filter(Boolean)
+    .join("; ");
 }
 
 export function createStateCookie(state) {
@@ -44,8 +53,9 @@ export function getState(req) {
   const cookie = req.headers.cookie || "";
 
   const match =
-    cookie.match(/medlab_state=([^;]+)/);
-
+cookie.match(
+  new RegExp(`${STATE_COOKIE}=([^;]+)`)
+);
   return match ? match[1] : null;
 }
 
@@ -68,7 +78,9 @@ export function getSession(req) {
   const cookie = req.headers.cookie || "";
 
   const match =
-    cookie.match(/medlab_session=([^;]+)/);
+  cookie.match(
+  new RegExp(`${COOKIE_NAME}=([^;]+)`)
+);
 
   if (!match) return null;
 
