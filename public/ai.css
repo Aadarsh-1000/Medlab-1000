@@ -69,12 +69,16 @@ h1 {
 }
 
 .message.user {
+  max-width: 75%;
+  text-wrap: wrap;
   background: var(--user-bg);
   color: var(--user-text);
   border-radius: var(--radius-md) var(--radius-md) 4px var(--radius-md);
 }
 
 .message.bot {
+   max-width: 75%;
+   text-wrap: wrap;
   background: var(--surface2);
   border: 0.5px solid var(--border);
   color: var(--text);
