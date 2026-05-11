@@ -25,7 +25,7 @@
     <h1>Your <text>intelligent</text> medical companion</h1>
     
     <div class="sub-text">Ask Medlab-AI any medical question to get precise and accurate answers.</div>
-    <a href="ai.html"><button>Start a conversation</button></a>
+    <a href="ai.html"><button id="startBtn">Start a conversation</button></a>
     <style>
         body{
            background-color: #0a0a0b;
@@ -187,7 +187,51 @@ backgroundColor: 0x0a0a0b,
 maxDistance: 18,
 spacing: 20
 })
+
+<script>
+async function checkLogin() {
+    try {
+        const res = await fetch("/api/auth/me");
+        const user = await res.json();
+
+        const btn = document.getElementById("startBtn");
+
+        // USER LOGGED IN
+        if (user && user.email) {
+
+            btn.innerText = `Continue as ${user.name}`;
+
+            btn.onclick = () => {
+                window.location.href = "/ai.html";
+            };
+
+            // OPTIONAL LOGOUT BUTTON
+            const logout = document.createElement("div");
+
+            logout.innerHTML = `
+                <a href="/api/auth/logout">
+                    <div class="button-1">Logout</div>
+                </a>
+            `;
+
+            document.body.appendChild(logout);
+
+        } else {
+
+            // USER NOT LOGGED IN
+            btn.onclick = () => {
+                window.location.href = "/api/auth/login";
+            };
+        }
+
+    } catch (err) {
+        console.error(err);
+    }
+}
+
+checkLogin();
 </script>
-    </script>
+</script>
+    
 </body>
 </html>
