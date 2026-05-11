@@ -1,6 +1,6 @@
 
 import crypto from "crypto";
-import { createStateCookie, getBaseUrl, getGoogleConfig } from "../../../medlabAI/api/_lib/auth.js";
+import { createStateCookie, getBaseUrl, getGoogleConfig } from "../_lib/auth.js";
 
 export default async function handler(req, res) {
   const state = crypto.randomBytes(16).toString("hex");

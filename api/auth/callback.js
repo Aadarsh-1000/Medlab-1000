@@ -4,7 +4,7 @@ import {
   getBaseUrl,
   getGoogleConfig,
   getState,
-} from "../../../medlabAI/api/_lib/auth.js";
+} from "../_lib/auth.js";
 
 export default async function handler(req, res) {
   const expectedState = getState(req);

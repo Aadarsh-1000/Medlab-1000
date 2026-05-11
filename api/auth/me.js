@@ -1,4 +1,4 @@
-import { getSession } from "../../../medlabAI/api/_lib/auth.js";
+import { getSession } from "../_lib/auth.js";
 
 export default function handler(req, res) {
   const user = getSession(req);
