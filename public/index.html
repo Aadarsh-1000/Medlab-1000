@@ -18,11 +18,13 @@
 <body id="vantajs">
     <nav>
     <div class="logo">MEDLAB<div class="hero">AI</div></div>
+    <div class="navbtn">
   <a href="https://www.medlabai.in/"><div class="button-1">Get Diagnosis→</div></a>
    <!-- DEFAULT LOGIN BUTTON -->
         <a href="/api/auth/login" id="login-link">
             <div class="button-1">
                 Login with Google
+            </div>
             </div>
         </a>
   </nav>
@@ -43,17 +45,24 @@
     overflow-x: hidden;
            
         }
-        
-        .button-1{
-            justify-self: end;
+        a{
+            text-decoration: none;
+        }
+        .navbtn{
+            display: flex;
+            gap: 12px;
             position: fixed;
             right: 20px;
-            font-family: "poppins";
-            color: beige;
-            border: 2px solid white;
-            padding: 10px 10px;
-            border-radius: 10px;
         }
+     .button-1{
+    font-family: "poppins";
+    color: beige;
+    border: 2px solid white;
+    padding: 10px 16px;
+    border-radius: 10px;
+    position: relative;
+    white-space: nowrap;
+}
         body{
    
    .logo,
@@ -69,6 +78,14 @@
             display: flex;
             backdrop-filter: blur(20px);
             background-color: transparent;
+            
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 20px;
+    backdrop-filter: blur(20px);
+    background-color: transparent;
+
             
         }
         body::before{
