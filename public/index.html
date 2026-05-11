@@ -17,17 +17,27 @@
 
 <body id="vantajs">
     <nav>
-    <div class="logo">MEDLAB<div class="hero">AI</div></div>
+    <div class="logo">
+        MEDLAB
+        <div class="hero">AI</div>
+    </div>
+
     <div class="navbtn">
-  <a href="https://www.medlabai.in/"><div class="button-1">Get Diagnosis→</div></a>
-   <!-- DEFAULT LOGIN BUTTON -->
+
+        <a href="https://www.medlabai.in/">
+            <div class="button-1">
+                Get Diagnosis →
+            </div>
+        </a>
+
         <a href="/api/auth/login" id="login-link">
             <div class="button-1">
                 Login with Google
             </div>
-            </div>
         </a>
-  </nav>
+
+    </div>
+</nav>
     <hr>
       
     <h1>Your <text>intelligent</text> medical companion</h1>
@@ -189,58 +199,86 @@ h1:hover{
             transition-duration: 200ms;
         }
     </style>
-    <script>
-        
+   <script>
+
 VANTA.NET({
-  el: "#vantajs",
+    el: "#vantajs",
+    mouseControls: true,
+    touchControls: true,
+    gyroControls: false,
+    minHeight: 200,
+    minWidth: 200,
+    scale: 1,
+    scaleMobile: 1,
+    color: 0xc8b8ff,
+    backgroundColor: 0x0a0a0b,
+    points: 8,
+    maxDistance: 18,
+    spacing: 20
+});
 
-  mouseControls: true,
-  touchControls: true,
-  gyroControls: false,
+async function checkLogin() {
 
-  minHeight: 200,
-  minWidth: 200,
+    try {
 
-  scale: 1,
-  scaleMobile: 1,
-color: 0xc8b8ff,
-backgroundColor: 0x0a0a0b,
+        const res =
+            await fetch("/api/auth/me");
 
- points: 8,
-maxDistance: 18,
-spacing: 20
-})
+        const user =
+            await res.json();
 
+        console.log(user);
 
-if (user && user.email) {
+        const btn =
+            document.getElementById("startBtn");
 
-    btn.innerText =
-      `Continue as ${user.name}`;
+        const navBtns =
+            document.querySelector(".navbtn");
 
-    btn.onclick = () => {
-        window.location.href = "/ai.html";
-    };
+        // USER LOGGED IN
+        if (user && user.email) {
 
-    // REPLACE NAV BUTTONS
-    const navBtns =
-      document.querySelector(".navbtn");
+            btn.innerText =
+                `Continue as ${user.name}`;
 
-    navBtns.innerHTML = `
-        <a href="https://www.medlabai.in/">
-            <div class="button-1">
-                Get Diagnosis →
-            </div>
-        </a>
+            btn.onclick = () => {
+                window.location.href =
+                    "/ai.html";
+            };
 
-        <a href="/api/auth/logout">
-            <div class="button-1">
-                Logout
-            </div>
-        </a>
-    `;
+            // REPLACE LOGIN BUTTON
+            navBtns.innerHTML = `
+                <a href="https://www.medlabai.in/">
+                    <div class="button-1">
+                        Get Diagnosis →
+                    </div>
+                </a>
+
+                <a href="/api/auth/logout">
+                    <div class="button-1">
+                        Logout
+                    </div>
+                </a>
+            `;
+
+        } else {
+
+            // USER NOT LOGGED IN
+            btn.onclick = () => {
+                window.location.href =
+                    "/api/auth/login";
+            };
+        }
+
+    } catch (err) {
+
+        console.error(err);
+    }
 }
-</script>
 
+checkLogin();
+
+</script>
     
 </body>
 </html>
