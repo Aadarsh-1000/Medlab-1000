@@ -212,47 +212,33 @@ spacing: 20
 })
 
 
-async function checkLogin() {
-    try {
-        const res = await fetch("/api/auth/me");
-        const user = await res.json();
+if (user && user.email) {
 
-        const btn = document.getElementById("startBtn");
+    btn.innerText =
+      `Continue as ${user.name}`;
 
-        // USER LOGGED IN
-        if (user && user.email) {
+    btn.onclick = () => {
+        window.location.href = "/ai.html";
+    };
 
-            btn.innerText = `Continue as ${user.name}`;
+    // REPLACE NAV BUTTONS
+    const navBtns =
+      document.querySelector(".navbtn");
 
-            btn.onclick = () => {
-                window.location.href = "/ai.html";
-            };
+    navBtns.innerHTML = `
+        <a href="https://www.medlabai.in/">
+            <div class="button-1">
+                Get Diagnosis →
+            </div>
+        </a>
 
-            // OPTIONAL LOGOUT BUTTON
-            const logout = document.createElement("div");
-
-            logout.innerHTML = `
-                <a href="/api/auth/logout">
-                    <div class="button-1">Logout</div>
-                </a>
-            `;
-
-            document.body.appendChild(logout);
-
-        } else {
-
-            // USER NOT LOGGED IN
-            btn.onclick = () => {
-                window.location.href = "/api/auth/login";
-            };
-        }
-
-    } catch (err) {
-        console.error(err);
-    }
+        <a href="/api/auth/logout">
+            <div class="button-1">
+                Logout
+            </div>
+        </a>
+    `;
 }
-
-checkLogin();
 </script>
 
     
