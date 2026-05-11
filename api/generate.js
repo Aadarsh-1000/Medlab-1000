@@ -1,8 +1,10 @@
+import { createAgent } from "../../lib/agent";
+
 export default async function handler(req, res) {
 
   if (req.method !== "POST") {
     return res.status(405).json({
-      message: "Method not allowed"
+      message: "Method not allowed",
     });
   }
 
@@ -10,61 +12,14 @@ export default async function handler(req, res) {
 
     const { prompt } = req.body;
 
-    const response = await fetch(
-      "https://api.groq.com/openai/v1/chat/completions",
-      {
-        method: "POST",
+    const agent = await createAgent();
 
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${process.env.GROQ_API_KEY}`
-        },
-
-        body: JSON.stringify({
-
-          model: "llama-3.1-8b-instant",
-
-          messages: [
-          {
-  role: "system",
-  content: `You are MEDLAB AI, a helpful medical assistant.
-
-Always answer in clean formatting.
-Always organize responses clearly.
-Use headings, bullet points, and spacing.
-Keep answers professional, concise, and easy to read.`
-},
-            {
-              role: "user",
-              content: prompt
-            }
-          ],
-
-          temperature: 0.7,
-          max_tokens: 1024
-
-        })
-      }
-    );
-
-    const data = await response.json();
-
-    console.log(data);
-
-    if (!response.ok) {
-      return res.status(response.status).json({
-        message:
-          data.error?.message ||
-          "Groq API Error"
-      });
-    }
-
-    const reply =
-      data.choices?.[0]?.message?.content ||
-      "No response generated";
+    const result = await agent.invoke({
+      input: prompt,
+    });
 
     res.status(200).json({
-      response: reply
+      response: result.output,
     });
 
   } catch (error) {
@@ -72,7 +27,7 @@ Keep answers professional, concise, and easy to read.`
     console.error(error);
 
     res.status(500).json({
-      message: error.message
+      message: error.message,
     });
 
   }

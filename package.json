@@ -6,6 +6,12 @@
     "build": "echo Build complete"
   },
   "dependencies": {
-    "marked": "^18.0.3"
+    "@langchain/openai": "^1.4.5",
+    "chromadb": "^3.4.3",
+    "dotenv": "^17.4.2",
+    "fastmcp": "^4.0.1",
+    "marked": "^18.0.3",
+    "pdf-parse": "^2.4.5",
+    "zod": "^4.4.3"
   }
 }

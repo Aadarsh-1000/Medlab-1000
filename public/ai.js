@@ -40,7 +40,7 @@ async function sendMessage() {
     const botReply =
       (data.response && data.response.trim()) ||
       "AI returned empty response";
-
+x
     document.getElementById(loadingId)?.remove();
     chatBox.innerHTML += `<div class="message bot">${botReply}</div>`;
   } catch (error) {
