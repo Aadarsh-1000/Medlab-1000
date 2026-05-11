@@ -67,7 +67,10 @@ h1 {
   word-break: break-word;
   position: relative;
 }
-
+.button-1{
+  position: fixed;
+  right: 100px;
+}
 .message.user {
   
   background: var(--user-bg);
