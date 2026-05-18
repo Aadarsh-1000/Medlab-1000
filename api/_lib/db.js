@@ -1,40 +1,41 @@
 import sqlite3 from "sqlite3";
 import { open } from "sqlite";
+
 import path from "path";
 import fs from "fs";
 
 export async function getDB() {
 
-  try {
+  // Original bundled DB
+  const sourcePath = path.join(
+    process.cwd(),
+    "data",
+    "combined_medical_database_optimized.db"
+  );
 
-    const dbPath = path.resolve(
-      process.cwd(),
-      "data",
-      "combined_medical_database_optimized.db"
-    );
+  // Writable temp DB path
+  const tempPath = "/tmp/medical.db";
 
-    console.log("========== DB DEBUG ==========");
-    console.log("CWD:", process.cwd());
-    console.log("DB PATH:", dbPath);
-    console.log("EXISTS:", fs.existsSync(dbPath));
-    console.log("==============================");
+  console.log("SOURCE:", sourcePath);
+  console.log("TMP:", tempPath);
 
-    const db = await open({
-      filename: dbPath,
-      driver: sqlite3.Database,
-    });
+  // Copy DB into writable temp storage
+  if (!fs.existsSync(tempPath)) {
 
-    console.log("SQLITE CONNECTED");
+    fs.copyFileSync(sourcePath, tempPath);
 
-    return db;
-
-  } catch (err) {
-
-    console.error("DB CONNECTION ERROR:");
-    console.error(err);
-
-    throw err;
+    console.log("DB copied to /tmp");
 
   }
+
+  // Open temp DB
+  const db = await open({
+    filename: tempPath,
+    driver: sqlite3.Database,
+  });
+
+  console.log("SQLITE CONNECTED");
+
+  return db;
 
 }
