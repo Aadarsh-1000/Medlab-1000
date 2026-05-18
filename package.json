@@ -2,16 +2,21 @@
   "name": "medlab-1000",
   "version": "1.0.0",
   "private": true,
+  "type": "module",
   "scripts": {
     "build": "echo Build complete"
   },
   "dependencies": {
+    "@langchain/community": "^1.1.28",
     "@langchain/openai": "^1.4.5",
+    "@langchain/textsplitters": "^1.0.1",
     "chromadb": "^3.4.3",
+    "cosine-similarity": "^1.0.1",
     "dotenv": "^17.4.2",
     "fastmcp": "^4.0.1",
     "marked": "^18.0.3",
     "pdf-parse": "^2.4.5",
+    "tavily": "^2.0.0",
     "zod": "^4.4.3"
   }
 }
