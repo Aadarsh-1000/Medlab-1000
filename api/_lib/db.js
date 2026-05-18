@@ -5,22 +5,36 @@ import fs from "fs";
 
 export async function getDB() {
 
-  const dbPath = path.join(
-    process.cwd(),
-    "public",
-    "combined_medical_database_optimized.db"
-  );
+  try {
 
-  console.log("DB PATH:", dbPath);
+    const dbPath = path.resolve(
+      process.cwd(),
+      "data",
+      "combined_medical_database_optimized.db"
+    );
 
-  console.log(
-    "DB EXISTS:",
-    fs.existsSync(dbPath)
-  );
+    console.log("========== DB DEBUG ==========");
+    console.log("CWD:", process.cwd());
+    console.log("DB PATH:", dbPath);
+    console.log("EXISTS:", fs.existsSync(dbPath));
+    console.log("==============================");
 
-  return open({
-    filename: dbPath,
-    driver: sqlite3.Database,
-  });
+    const db = await open({
+      filename: dbPath,
+      driver: sqlite3.Database,
+    });
+
+    console.log("SQLITE CONNECTED");
+
+    return db;
+
+  } catch (err) {
+
+    console.error("DB CONNECTION ERROR:");
+    console.error(err);
+
+    throw err;
+
+  }
 
 }
