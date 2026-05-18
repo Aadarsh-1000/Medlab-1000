@@ -6,6 +6,7 @@ import { getDB } from "./_lib/db.js";
 async function rankDiseases(userSymptoms) {
 
   const db = await getDB();
+  console.log("DB CONNECTED");
 
   const matchedSymptoms = [];
 
