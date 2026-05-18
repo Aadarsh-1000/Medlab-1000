@@ -79,7 +79,7 @@ async function searchMedical(query) {
         api_key: process.env.TAVILY_API_KEY,
         query,
         search_depth: "advanced",
-        max_results: 5,
+        max_results: 2,
       }),
     }
   );
@@ -149,7 +149,15 @@ TOP DISEASE MATCHES:
 ${JSON.stringify(rankedDiseases, null, 2)}
 
 MEDICAL SEARCH RESULTS:
-${JSON.stringify(webResults, null, 2)}
+${webResults.map(w => `
+Disease: ${w.disease}
+
+${w.results.map(r => `
+Title: ${r.title}
+Content: ${r.content?.slice(0, 300)}
+URL: ${r.url}
+`).join("\n")}
+`).join("\n")}
 `;
 
     // Send to Groq
