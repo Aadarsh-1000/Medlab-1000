@@ -97,12 +97,18 @@ Output:
 
   } catch (error) {
 
-    console.error("SYMPTOM EXTRACTION ERROR:");
-    console.error(error);
+  console.error("==========");
+  console.error("SYMPTOM EXTRACTION ERROR");
+  console.error(error);
 
-    return [];
+  console.error("RAW MODEL OUTPUT:");
+  console.error(content);
 
-  }
+  console.error("==========");
+
+  return [];
+
+}
 
 }
 
