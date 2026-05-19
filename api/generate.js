@@ -269,9 +269,12 @@ DO NOT claim certainty.
 DO NOT provide a definitive diagnosis.
 Always recommend professional medical care for urgent, severe, or worrying symptoms.
 
-Use clean formatting.
-Use bullet points when helpful.
-Keep responses readable.
+Formatting rules:
+- Always answer in clean Markdown.
+- Use short section headings with ##.
+- Use bullet points for findings, reasoning, and next steps.
+- Avoid long paragraph blocks.
+- Keep each bullet concise and readable.
 `,
     },
     {
@@ -291,7 +294,11 @@ You are MEDLAB AI.
 When the user is not giving symptoms, chat naturally and answer their question directly.
 You can discuss general wellness or medical education, but do not force a diagnosis flow.
 If the user asks for medical advice, be helpful, cautious, and recommend professional care when appropriate.
-Keep the tone friendly and concise.
+Formatting rules:
+- Always answer in clean Markdown.
+- Use short section headings with ## when the answer has more than one idea.
+- Use bullet points instead of long paragraph blocks.
+- Keep the tone friendly and concise.
 `,
     },
     {

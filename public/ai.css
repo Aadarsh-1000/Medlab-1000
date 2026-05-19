@@ -98,6 +98,54 @@ h1 {
   pointer-events: none;
 }
 
+.message.bot h2,
+.message.bot h3,
+.message.bot h4 {
+  margin: 0 0 8px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.message.bot p {
+  margin: 0 0 9px;
+}
+
+.message.bot ul {
+  margin: 0 0 10px;
+  padding-left: 20px;
+}
+
+.message.bot li {
+  margin: 4px 0;
+}
+
+.message.bot p:last-child,
+.message.bot ul:last-child {
+  margin-bottom: 0;
+}
+
+.message.bot strong {
+  color: #ffffff;
+  font-weight: 700;
+}
+
+.message.bot code {
+  background: rgba(255,255,255,0.08);
+  border: 0.5px solid var(--border);
+  border-radius: 5px;
+  padding: 1px 5px;
+  font-family: Consolas, monospace;
+  font-size: 13px;
+}
+
+.message.bot a {
+  color: var(--accent);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
 /* Input bar */
 .messageBox {
   display: flex;
