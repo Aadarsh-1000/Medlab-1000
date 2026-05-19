@@ -3,9 +3,9 @@ dotenv.config();
 
 import { getDB } from "./_lib/db.js";
 
-// ---------------------------------------------------
+// =====================================================
 // CONFIG
-// ---------------------------------------------------
+// =====================================================
 
 const STOP_WORDS = [
   "hi",
@@ -39,9 +39,9 @@ const STOP_WORDS = [
 
 const MIN_SCORE = 2;
 
-// ---------------------------------------------------
+// =====================================================
 // TOKENIZER
-// ---------------------------------------------------
+// =====================================================
 
 function tokenizeSymptoms(text = "") {
 
@@ -57,9 +57,9 @@ function tokenizeSymptoms(text = "") {
 
 }
 
-// ---------------------------------------------------
-// DISEASE RANKER
-// ---------------------------------------------------
+// =====================================================
+// RANK DISEASES
+// =====================================================
 
 async function rankDiseases(userSymptoms) {
 
@@ -69,9 +69,9 @@ async function rankDiseases(userSymptoms) {
 
   const matchedSymptoms = [];
 
-  // -------------------------------------------
+  // -------------------------------------------------
   // FIND MATCHING HPO TERMS
-  // -------------------------------------------
+  // -------------------------------------------------
 
   for (const symptom of userSymptoms) {
 
@@ -103,9 +103,9 @@ async function rankDiseases(userSymptoms) {
 
   }
 
-  // -------------------------------------------
-  // REMOVE DUPLICATE HPO IDs
-  // -------------------------------------------
+  // -------------------------------------------------
+  // UNIQUE HPO IDS
+  // -------------------------------------------------
 
   const hpoIds = [
     ...new Set(
@@ -115,17 +115,17 @@ async function rankDiseases(userSymptoms) {
     )
   ];
 
-  // -------------------------------------------
-  // NO MATCHES FOUND
-  // -------------------------------------------
+  // -------------------------------------------------
+  // NO MATCHES
+  // -------------------------------------------------
 
   if (hpoIds.length === 0) {
     return [];
   }
 
-  // -------------------------------------------
+  // -------------------------------------------------
   // LOAD DISEASES
-  // -------------------------------------------
+  // -------------------------------------------------
 
   const diseases = await db.all(`
     SELECT *
@@ -134,24 +134,29 @@ async function rankDiseases(userSymptoms) {
 
   const scored = [];
 
-  // -------------------------------------------
+  // -------------------------------------------------
   // SCORE DISEASES
-  // -------------------------------------------
+  // -------------------------------------------------
 
   for (const disease of diseases) {
 
     try {
 
-      let diseaseSymptoms = disease.symptoms;
+      let diseaseSymptoms =
+        disease.symptoms;
 
-      // Convert JSON string -> array if needed
+      // Convert JSON string to array
       if (typeof diseaseSymptoms === "string") {
 
         try {
+
           diseaseSymptoms =
             JSON.parse(diseaseSymptoms);
+
         } catch {
+
           diseaseSymptoms = [];
+
         }
 
       }
@@ -164,8 +169,12 @@ async function rankDiseases(userSymptoms) {
 
       for (const hpo of hpoIds) {
 
-        if (diseaseSymptoms.includes(hpo)) {
+        if (
+          diseaseSymptoms.includes(hpo)
+        ) {
+
           score++;
+
         }
 
       }
@@ -173,9 +182,13 @@ async function rankDiseases(userSymptoms) {
       if (score > 0) {
 
         scored.push({
+
           disease: disease.id,
+
           score,
+
           matchedSymptoms: score
+
         });
 
       }
@@ -192,19 +205,15 @@ async function rankDiseases(userSymptoms) {
 
   }
 
-  // -------------------------------------------
-  // SORT BEST MATCHES
-  // -------------------------------------------
-
   scored.sort((a, b) => b.score - a.score);
 
   return scored.slice(0, 5);
 
 }
 
-// ---------------------------------------------------
-// SEARCH MEDICAL EVIDENCE
-// ---------------------------------------------------
+// =====================================================
+// SEARCH MEDICAL WEB
+// =====================================================
 
 async function searchMedical(query) {
 
@@ -216,19 +225,28 @@ async function searchMedical(query) {
         method: "POST",
 
         headers: {
-          "Content-Type": "application/json",
+          "Content-Type":
+            "application/json"
         },
 
         body: JSON.stringify({
-          api_key: process.env.TAVILY_API_KEY,
+
+          api_key:
+            process.env.TAVILY_API_KEY,
+
           query,
+
           search_depth: "advanced",
-          max_results: 2,
-        }),
+
+          max_results: 2
+
+        })
+
       }
     );
 
-    const data = await response.json();
+    const data =
+      await response.json();
 
     return data.results || [];
 
@@ -245,15 +263,47 @@ async function searchMedical(query) {
 
 }
 
-// ---------------------------------------------------
-// MAIN API HANDLER
-// ---------------------------------------------------
+// =====================================================
+// STREAM HELPERS
+// =====================================================
+
+function sendStream(res, payload) {
+
+  res.write(
+    JSON.stringify(payload) + "\n"
+  );
+
+}
+
+function sendStatus(res, message) {
+
+  sendStream(res, {
+    type: "status",
+    message
+  });
+
+}
+
+function sendFinal(res, data) {
+
+  sendStream(res, {
+    type: "final",
+    ...data
+  });
+
+  res.end();
+
+}
+
+// =====================================================
+// MAIN HANDLER
+// =====================================================
 
 export default async function handler(req, res) {
 
-  // -------------------------------------------
-  // METHOD VALIDATION
-  // -------------------------------------------
+  // -------------------------------------------------
+  // METHOD CHECK
+  // -------------------------------------------------
 
   if (req.method !== "POST") {
 
@@ -263,11 +313,30 @@ export default async function handler(req, res) {
 
   }
 
+  // -------------------------------------------------
+  // ENABLE STREAMING
+  // -------------------------------------------------
+
+  res.writeHead(200, {
+
+    "Content-Type":
+      "text/plain; charset=utf-8",
+
+    "Transfer-Encoding":
+      "chunked",
+
+    "Cache-Control":
+      "no-cache, no-transform",
+
+    Connection: "keep-alive",
+
+  });
+
   try {
 
-    // -------------------------------------------
-    // REQUEST VALIDATION
-    // -------------------------------------------
+    // -------------------------------------------------
+    // VALIDATE INPUT
+    // -------------------------------------------------
 
     const { prompt } = req.body || {};
 
@@ -276,40 +345,16 @@ export default async function handler(req, res) {
       typeof prompt !== "string"
     ) {
 
-      return res.status(400).json({
-        message: "Prompt is required"
-      });
-
-    }
-
-    // -------------------------------------------
-    // TOKENIZE INPUT
-    // -------------------------------------------
-
-    const userSymptoms =
-      tokenizeSymptoms(prompt);
-
-    console.log(
-      "DETECTED TOKENS:",
-      userSymptoms
-    );
-
-    // -------------------------------------------
-    // EARLY EXIT FOR NORMAL CHAT
-    // -------------------------------------------
-
-    if (userSymptoms.length === 0) {
-
-      return res.status(200).json({
+      return sendFinal(res, {
 
         response:
-          "Hello 👋 How can I help you today?",
+          "Prompt is required",
 
         isMedicalContext: false,
 
-        detectedSymptoms: [],
-
         diseases: [],
+
+        detectedSymptoms: [],
 
         sources: []
 
@@ -317,72 +362,138 @@ export default async function handler(req, res) {
 
     }
 
-    // -------------------------------------------
-    // RANK DISEASES
-    // -------------------------------------------
+    // -------------------------------------------------
+    // STEP 1
+    // -------------------------------------------------
 
-    const rankedDiseases =
-      await rankDiseases(userSymptoms);
+    sendStatus(
+      res,
+      "🧠 Processing user query"
+    );
+
+    const userSymptoms =
+      tokenizeSymptoms(prompt);
 
     console.log(
-      "RANKED DISEASES:",
+      "TOKENS:",
+      userSymptoms
+    );
+
+    // -------------------------------------------------
+    // NO TOKENS
+    // -------------------------------------------------
+
+    if (userSymptoms.length === 0) {
+
+      return sendFinal(res, {
+
+        response:
+          "Hello 👋 How can I help you today?",
+
+        isMedicalContext: false,
+
+        diseases: [],
+
+        detectedSymptoms: [],
+
+        sources: []
+
+      });
+
+    }
+
+    // -------------------------------------------------
+    // STEP 2
+    // -------------------------------------------------
+
+    sendStatus(
+      res,
+      "📂 Searching medical database"
+    );
+
+    const rankedDiseases =
+      await rankDiseases(
+        userSymptoms
+      );
+
+    console.log(
+      "RANKED:",
       rankedDiseases
     );
 
-    // -------------------------------------------
-    // FILTER LOW CONFIDENCE
-    // -------------------------------------------
+    // -------------------------------------------------
+    // STEP 3
+    // -------------------------------------------------
+
+    sendStatus(
+      res,
+      "✅ Medical database analyzed"
+    );
 
     const filteredDiseases =
       rankedDiseases.filter(
-        disease =>
-          disease.score >= MIN_SCORE
+        d => d.score >= MIN_SCORE
       );
 
-    const hasSymptomsDetected =
-      filteredDiseases.length > 0;
+    // -------------------------------------------------
+    // NO MATCHES
+    // -------------------------------------------------
 
-    // -------------------------------------------
-    // NON-MEDICAL CHAT MODE
-    // -------------------------------------------
+    if (
+      filteredDiseases.length === 0
+    ) {
 
-    if (!hasSymptomsDetected) {
+      sendStatus(
+        res,
+        "🤖 Sending query to AI assistant"
+      );
 
       const response = await fetch(
         "https://api.groq.com/openai/v1/chat/completions",
         {
+
           method: "POST",
 
           headers: {
-            "Content-Type": "application/json",
-            "Authorization":
+
+            "Content-Type":
+              "application/json",
+
+            Authorization:
               `Bearer ${process.env.GROQ_API_KEY}`
+
           },
 
           body: JSON.stringify({
 
-            model: "llama-3.1-8b-instant",
+            model:
+              "llama-3.1-8b-instant",
 
             messages: [
 
               {
+
                 role: "system",
 
                 content: `
 You are MEDLAB AI.
 
-The user input does not clearly contain medical symptoms.
+The input does not contain
+clear medical symptoms.
 
-Respond conversationally and helpfully.
+Respond conversationally.
 
 DO NOT invent diseases.
-DO NOT fabricate diagnoses.
 `
+
               },
 
               {
+
                 role: "user",
+
                 content: prompt
+
               }
 
             ],
@@ -392,24 +503,32 @@ DO NOT fabricate diagnoses.
             max_tokens: 500
 
           })
+
         }
       );
 
-      const data = await response.json();
+      sendStatus(
+        res,
+        "✨ AI generating response"
+      );
+
+      const data =
+        await response.json();
 
       const reply =
-        data?.choices?.[0]?.message?.content ||
+        data?.choices?.[0]?.message
+          ?.content ||
         "How can I help you?";
 
-      return res.status(200).json({
+      return sendFinal(res, {
 
         response: reply,
 
         isMedicalContext: false,
 
-        detectedSymptoms: [],
-
         diseases: [],
+
+        detectedSymptoms: [],
 
         sources: []
 
@@ -417,45 +536,77 @@ DO NOT fabricate diagnoses.
 
     }
 
-    // -------------------------------------------
-    // SEARCH MEDICAL SOURCES
-    // -------------------------------------------
+    // -------------------------------------------------
+    // STEP 4
+    // -------------------------------------------------
+
+    sendStatus(
+      res,
+      "🌐 Searching medical evidence"
+    );
 
     const webResults = [];
 
     for (const disease of filteredDiseases) {
 
-      const results =
-        await searchMedical(
-          `${disease.disease} symptoms treatment prognosis`
+      try {
+
+        const results =
+          await searchMedical(
+            `${disease.disease} symptoms treatment prognosis`
+          );
+
+        webResults.push({
+          disease:
+            disease.disease,
+
+          results
+        });
+
+      } catch (err) {
+
+        console.error(
+          "Search failed:",
+          disease.disease
         );
 
-      webResults.push({
-        disease: disease.disease,
-        results,
-      });
+      }
 
     }
 
-    // -------------------------------------------
-    // BUILD AI CONTEXT
-    // -------------------------------------------
+    // -------------------------------------------------
+    // STEP 5
+    // -------------------------------------------------
+
+    sendStatus(
+      res,
+      "🤖 Sending context to AI model"
+    );
 
     const context = `
 USER QUERY:
 ${prompt}
 
 DETECTED SYMPTOMS:
-${JSON.stringify(userSymptoms, null, 2)}
+${JSON.stringify(
+  userSymptoms,
+  null,
+  2
+)}
 
-TOP DISEASE MATCHES:
-${JSON.stringify(filteredDiseases, null, 2)}
+TOP MATCHES:
+${JSON.stringify(
+  filteredDiseases,
+  null,
+  2
+)}
 
-MEDICAL SEARCH RESULTS:
+WEB EVIDENCE:
 
 ${webResults.map(w => `
 
-Disease: ${w.disease}
+Disease:
+${w.disease}
 
 ${w.results.map(r => `
 
@@ -473,61 +624,75 @@ ${r.url}
 `).join("\n")}
 `;
 
-    // -------------------------------------------
-    // SEND TO GROQ
-    // -------------------------------------------
+    // -------------------------------------------------
+    // GROQ REQUEST
+    // -------------------------------------------------
 
     const response = await fetch(
       "https://api.groq.com/openai/v1/chat/completions",
       {
+
         method: "POST",
 
         headers: {
-          "Content-Type": "application/json",
-          "Authorization":
+
+          "Content-Type":
+            "application/json",
+
+          Authorization:
             `Bearer ${process.env.GROQ_API_KEY}`
+
         },
 
         body: JSON.stringify({
 
-          model: "llama-3.1-8b-instant",
+          model:
+            "llama-3.1-8b-instant",
 
           messages: [
 
             {
+
               role: "system",
 
               content: `
 You are MEDLAB AI.
 
-You are a professional medical AI assistant.
+You are a professional
+medical AI assistant.
 
 You are provided:
-- user symptoms
-- ranked disease matches
-- medical search evidence
+- symptoms
+- disease matches
+- live medical evidence
 
 Your job:
 - explain possible conditions
 - summarize symptom overlap
-- explain possible causes
 - provide safe guidance
-- suggest medical follow-up
+- recommend follow-up
 
 IMPORTANT:
-- NEVER provide diagnosis
+- NEVER diagnose
 - NEVER claim certainty
-- NEVER invent conditions
-- ALWAYS recommend medical care
-- Keep formatting clean
-- Use bullet points
-- Be concise and readable
+- NEVER invent diseases
+- ALWAYS recommend
+  professional care
+
+Use:
+- bullet points
+- clean formatting
+- readable structure
 `
+
             },
 
             {
+
               role: "user",
+
               content: context
+
             }
 
           ],
@@ -537,53 +702,76 @@ IMPORTANT:
           max_tokens: 1500
 
         })
+
       }
     );
 
-    const data = await response.json();
+    // -------------------------------------------------
+    // STEP 6
+    // -------------------------------------------------
 
-    // -------------------------------------------
-    // HANDLE GROQ ERRORS
-    // -------------------------------------------
+    sendStatus(
+      res,
+      "✨ AI generating response"
+    );
+
+    const data =
+      await response.json();
 
     if (!response.ok) {
 
       console.error(
-        "Groq API Error:",
+        "GROQ ERROR:",
         data
       );
 
-      return res.status(response.status).json({
-        message:
+      return sendFinal(res, {
+
+        response:
           data?.error?.message ||
-          "Groq API Error"
+          "Groq API Error",
+
+        isMedicalContext: false,
+
+        diseases: [],
+
+        detectedSymptoms: [],
+
+        sources: []
+
       });
 
     }
 
     const reply =
-      data?.choices?.[0]?.message?.content ||
+      data?.choices?.[0]?.message
+        ?.content ||
       "No response generated";
 
-    // -------------------------------------------
+    // -------------------------------------------------
     // FINAL RESPONSE
-    // -------------------------------------------
+    // -------------------------------------------------
 
-    return res.status(200).json({
+    return sendFinal(res, {
 
       response: reply,
 
       isMedicalContext: true,
 
-      detectedSymptoms: userSymptoms,
+      detectedSymptoms:
+        userSymptoms,
 
-      diseases: filteredDiseases,
+      diseases:
+        filteredDiseases,
 
       sources:
         webResults.flatMap(w =>
           w.results.map(r => ({
+
             title: r.title,
+
             url: r.url
+
           }))
         )
 
@@ -596,10 +784,20 @@ IMPORTANT:
       error
     );
 
-    return res.status(500).json({
-      message:
+    return sendFinal(res, {
+
+      response:
         error.message ||
-        "Internal server error"
+        "Internal server error",
+
+      isMedicalContext: false,
+
+      diseases: [],
+
+      detectedSymptoms: [],
+
+      sources: []
+
     });
 
   }
