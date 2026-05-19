@@ -22,93 +22,148 @@ export default function Home() {
 
 
 
-  async function sendMessage() {
+  
+async function sendMessage() {
 
-    if (!prompt.trim()) return;
+  if (!prompt.trim()) return;
 
-    const userMessage = {
-      role: "user",
-      text: prompt
-    };
+  const userMessage = {
+    role: "user",
+    text: prompt
+  };
 
-    setMessages(prev => [...prev, userMessage]);
+  setMessages(prev => [...prev, userMessage]);
 
-    const currentPrompt = prompt;
+  const currentPrompt = prompt;
 
-    setPrompt("");
+  setPrompt("");
 
-    setLoading(true);
+  setLoading(true);
+
+  try {
+
+    const response = await fetch("/api/chat", {
+
+      method: "POST",
+
+      headers: {
+        "Content-Type": "application/json"
+      },
+
+      body: JSON.stringify({
+        prompt: currentPrompt
+      })
+
+    });
+
+
+
+
+    // =====================================
+    // SAFER RESPONSE HANDLING
+    // =====================================
+
+    const rawText =
+      await response.text();
+
+    console.log("RAW SERVER RESPONSE:");
+    console.log(rawText);
+
+    let data;
 
     try {
 
-      const response = await fetch("/api/chat", {
+      data = JSON.parse(rawText);
 
-        method: "POST",
+    } catch {
 
-        headers: {
-          "Content-Type": "application/json"
-        },
-
-        body: JSON.stringify({
-          prompt: currentPrompt
-        })
-
-      });
-
-      const data = await response.json();
-
-      console.log("FULL API RESPONSE:");
-      console.log(data);
-
-      const assistantMessage = {
-
-        role: "assistant",
-
-        text:
-          data.response ||
-          "No response generated",
-
-        debug:
-          data.debug || [],
-
-        extractedSymptoms:
-          data.extractedSymptoms || [],
-
-        rankedDiseases:
-          data.rankedDiseases || [],
-
-        webResults:
-          data.webResults || []
-
-      };
-
-      setMessages(prev => [
-        ...prev,
-        assistantMessage
-      ]);
-
-    } catch (error) {
-
-      console.error(error);
-
-      setMessages(prev => [
-
-        ...prev,
-
-        {
-          role: "assistant",
-          text: "Something went wrong."
-        }
-
-      ]);
+      throw new Error(
+        "Backend returned invalid JSON"
+      );
 
     }
 
-    setLoading(false);
+
+
+
+    // =====================================
+    // HANDLE API ERRORS
+    // =====================================
+
+    if (!response.ok) {
+
+      throw new Error(
+        data.message || "Server error"
+      );
+
+    }
+
+
+
+
+    // =====================================
+    // ADD ASSISTANT MESSAGE
+    // =====================================
+
+    const assistantMessage = {
+
+      role: "assistant",
+
+      text:
+        data.response ||
+        "No response generated",
+
+      debug:
+        data.debug || [],
+
+      extractedSymptoms:
+        data.extractedSymptoms || [],
+
+      rankedDiseases:
+        data.rankedDiseases || [],
+
+      webResults:
+        data.webResults || []
+
+    };
+
+    setMessages(prev => [
+      ...prev,
+      assistantMessage
+    ]);
+
+  } catch (error) {
+
+    console.error(error);
+
+    setMessages(prev => [
+
+      ...prev,
+
+      {
+        role: "assistant",
+
+        text:
+          `Error: ${error.message}`,
+
+        debug: [
+
+          {
+            step: "FRONTEND ERROR",
+            data: error.message
+          }
+
+        ]
+
+      }
+
+    ]);
 
   }
 
+  setLoading(false);
 
+}
 
   return (
 
