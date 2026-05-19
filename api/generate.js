@@ -3,325 +3,300 @@ dotenv.config();
 
 import { getDB } from "./_lib/db.js";
 
-/* =================================
-   LOGGER
-================================= */
 
-function logStep(title, data = null) {
 
-  console.log("\n=================================");
-  console.log(`STEP: ${title}`);
-  console.log("=================================");
-
-  if (data !== null) {
-
-    console.log(
-      typeof data === "string"
-        ? data
-        : JSON.stringify(data, null, 2)
-    );
-
-  }
-
-}
-
-/* =================================
+/* =========================================
    SYMPTOM EXTRACTION
-================================= */
+========================================= */
 
-function extractSymptoms(text) {
+async function extractSymptoms(prompt) {
 
-  const knownSymptoms = [
+  try {
 
-    "sore throat",
-    "fever",
-    "headache",
-    "cough",
-    "fatigue",
-    "chest pain",
-    "shortness of breath",
-    "urinary retention",
-    "blurred vision",
-    "nausea",
-    "vomiting",
-    "diarrhea",
-    "dizziness",
-    "body pain",
-    "runny nose",
-    "congestion",
-    "abdominal pain",
-    "loss of taste",
-    "loss of smell"
-
-  ];
-
-  const lower =
-    text.toLowerCase();
-
-  const matches =
-    knownSymptoms.filter(symptom =>
-      lower.includes(symptom)
-    );
-
-  // fallback
-  if (matches.length === 0) {
-
-    return lower
-      .split(/[,]+/)
-      .map(s => s.trim())
-      .filter(Boolean);
-
-  }
-
-  return matches;
-
-}
-
-/* =================================
-   FILTER RARE DISEASES
-================================= */
-
-function isRareDisease(diseaseName) {
-
-  const bannedKeywords = [
-
-    "syndrome",
-    "deficiency",
-    "chromosome",
-    "mutation",
-    "hereditary",
-    "congenital",
-    "deletion",
-    "duplication",
-    "dysplasia"
-
-  ];
-
-  const lower =
-    diseaseName.toLowerCase();
-
-  return bannedKeywords.some(keyword =>
-    lower.includes(keyword)
-  );
-
-}
-
-/* =================================
-   COMMON DISEASE BOOST
-================================= */
-
-const commonDiseaseBoost = {
-
-  "Common Cold": 10,
-  "Influenza": 9,
-  "Flu": 9,
-  "COVID-19": 9,
-  "Strep Throat": 10,
-  "Pharyngitis": 8,
-  "Tonsillitis": 8,
-  "Bronchitis": 7,
-  "Migraine": 7,
-  "Gastroenteritis": 7,
-  "Diabetes": 6
-
-};
-
-/* =================================
-   DISEASE RANKER
-================================= */
-
-async function rankDiseases(userSymptoms) {
-
-  logStep(
-    "DISEASE RANKING STARTED",
-    userSymptoms
-  );
-
-  const db = await getDB();
-
-  logStep("DATABASE CONNECTED");
-
-  const matchedSymptoms = [];
-
-  for (const symptom of userSymptoms) {
-
-    const sql = `
-      SELECT *
-      FROM symptoms
-      WHERE name LIKE ?
-      LIMIT 10
-    `;
-
-    const parameter =
-      `%${symptom}%`;
-
-    logStep(
-      "QUERY SENT TO DB",
+    const response = await fetch(
+      "https://api.groq.com/openai/v1/chat/completions",
       {
-        symptom,
-        sql,
-        parameter
+        method: "POST",
+
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization":
+            `Bearer ${process.env.GROQ_API_KEY}`
+        },
+
+        body: JSON.stringify({
+
+          model: "llama-3.1-8b-instant",
+
+          messages: [
+
+            {
+              role: "system",
+
+              content: `
+You are a medical symptom extractor.
+
+Your ONLY task:
+- extract medically relevant symptoms
+- return ONLY valid JSON array
+
+Rules:
+- ignore greetings
+- ignore filler words
+- ignore normal conversation
+- only include symptoms
+
+Examples:
+
+Input:
+"I have headache and fever"
+
+Output:
+["headache","fever"]
+
+Input:
+"hello how are you"
+
+Output:
+[]
+`
+            },
+
+            {
+              role: "user",
+              content: prompt
+            }
+
+          ],
+
+          temperature: 0,
+          max_tokens: 100
+
+        })
       }
     );
 
-    const rows =
-      await db.all(sql, [parameter]);
+    const data = await response.json();
 
-    logStep(
-      "DB RESPONSE RECEIVED",
-      rows
-    );
+    let content =
+      data.choices?.[0]?.message?.content || "[]";
+
+    // Clean markdown if model returns ```json
+    content = content
+      .replace(/```json/g, "")
+      .replace(/```/g, "")
+      .trim();
+
+    const parsed = JSON.parse(content);
+
+    if (Array.isArray(parsed)) {
+      return parsed;
+    }
+
+    return [];
+
+  } catch (error) {
+
+    console.error("SYMPTOM EXTRACTION ERROR:");
+    console.error(error);
+
+    return [];
+
+  }
+
+}
+
+
+
+/* =========================================
+   RANK DISEASES
+========================================= */
+
+async function rankDiseases(userSymptoms) {
+
+  const db = await getDB();
+
+  console.log("DB CONNECTED");
+
+  const matchedSymptoms = [];
+
+  // Match symptoms from DB
+  for (const symptom of userSymptoms) {
+
+    const rows = await db.all(`
+      SELECT *
+      FROM symptoms
+      WHERE LOWER(name) LIKE LOWER(?)
+      LIMIT 10
+    `, [`%${symptom}%`]);
 
     matchedSymptoms.push(...rows);
 
   }
 
+  console.log("MATCHED SYMPTOMS:");
+  console.log(matchedSymptoms);
+
+  // Extract HPO IDs
   const hpoIds =
-    matchedSymptoms.map(s => s.id);
+    [...new Set(
+      matchedSymptoms.map(s => s.id)
+    )];
 
-  logStep(
-    "MATCHED HPO IDS",
-    hpoIds
-  );
+  console.log("HPO IDS:");
+  console.log(hpoIds);
 
-  const diseases =
-    await db.all(`
-      SELECT *
-      FROM disease_symptoms
-    `);
-
-  logStep(
-    "ALL DISEASES RETRIEVED",
-    {
-      total: diseases.length
-    }
-  );
+  // Get disease mappings
+  const diseases = await db.all(`
+    SELECT *
+    FROM disease_symptoms
+  `);
 
   const scored = [];
 
   for (const disease of diseases) {
 
-    if (
-      isRareDisease(disease.id)
-    ) {
-      continue;
-    }
-
     let score = 0;
-    let matches = 0;
+
+    // Convert CSV string into array
+    const diseaseSymptoms =
+      disease.symptoms
+        ?.split(",")
+        .map(s => s.trim()) || [];
 
     for (const hpo of hpoIds) {
 
-      if (
-        disease.symptoms.includes(hpo)
-      ) {
-
-        matches++;
-
-        score += 2;
-
+      if (diseaseSymptoms.includes(hpo)) {
+        score++;
       }
 
     }
 
-    // normalize score
-    const diseaseSymptomCount =
-      disease.symptoms.split(",").length || 1;
-
-    const normalizedScore =
-      score / diseaseSymptomCount;
-
-    // common disease boost
-    const boost =
-      commonDiseaseBoost[disease.id] || 0;
-
-    const finalScore =
-      normalizedScore + boost;
-
-    // confidence threshold
-    if (matches >= 1) {
+    // Require stronger evidence
+    if (score >= Math.min(2, userSymptoms.length)) {
 
       scored.push({
-
         disease: disease.id,
-
-        score: Number(
-          finalScore.toFixed(2)
-        ),
-
-        matchedSymptoms: matches
-
+        score
       });
 
     }
 
   }
 
-  scored.sort(
-    (a, b) => b.score - a.score
-  );
-
-  logStep(
-    "DISEASE RANKING COMPLETE",
-    scored.slice(0, 10)
-  );
+  scored.sort((a, b) => b.score - a.score);
 
   return scored.slice(0, 5);
 
 }
 
-/* =================================
+
+
+/* =========================================
    WEB SEARCH
-================================= */
+========================================= */
 
 async function searchMedical(query) {
 
-  logStep(
-    "WEB SEARCH STARTED",
-    query
-  );
+  try {
+
+    const response = await fetch(
+      "https://api.tavily.com/search",
+      {
+        method: "POST",
+
+        headers: {
+          "Content-Type": "application/json",
+        },
+
+        body: JSON.stringify({
+
+          api_key: process.env.TAVILY_API_KEY,
+
+          query,
+
+          search_depth: "advanced",
+
+          max_results: 5
+
+        })
+      }
+    );
+
+    const data = await response.json();
+
+    return data.results || [];
+
+  } catch (error) {
+
+    console.error("TAVILY ERROR:");
+    console.error(error);
+
+    return [];
+
+  }
+
+}
+
+
+
+/* =========================================
+   NORMAL CHAT
+========================================= */
+
+async function normalChat(prompt) {
 
   const response = await fetch(
-    "https://api.tavily.com/search",
+    "https://api.groq.com/openai/v1/chat/completions",
     {
-
       method: "POST",
 
       headers: {
         "Content-Type": "application/json",
+        "Authorization":
+          `Bearer ${process.env.GROQ_API_KEY}`
       },
 
       body: JSON.stringify({
 
-        api_key:
-          process.env.TAVILY_API_KEY,
+        model: "llama-3.1-8b-instant",
 
-        query,
+        messages: [
 
-        search_depth: "advanced",
+          {
+            role: "system",
 
-        max_results: 2,
+            content:
+              "You are a friendly medical AI assistant."
+          },
 
-      }),
+          {
+            role: "user",
+            content: prompt
+          }
 
+        ],
+
+        temperature: 0.7
+
+      })
     }
   );
 
-  const data =
-    await response.json();
+  const data = await response.json();
 
-  logStep(
-    "WEB SEARCH RESPONSE RECEIVED",
-    data
+  return (
+    data.choices?.[0]?.message?.content
+    || "No response generated"
   );
-
-  return data.results || [];
 
 }
 
-/* =================================
-   MAIN API
-================================= */
+
+
+/* =========================================
+   MAIN HANDLER
+========================================= */
 
 export default async function handler(req, res) {
 
@@ -335,16 +310,7 @@ export default async function handler(req, res) {
 
   try {
 
-    logStep(
-      "NEW REQUEST RECEIVED"
-    );
-
     const { prompt } = req.body;
-
-    logStep(
-      "USER PROMPT RECEIVED",
-      prompt
-    );
 
     if (!prompt) {
 
@@ -354,70 +320,81 @@ export default async function handler(req, res) {
 
     }
 
-    /* =============================
-       EXTRACT SYMPTOMS
-    ============================= */
+
+
+    /* =========================================
+       STEP 1 — EXTRACT SYMPTOMS
+    ========================================= */
 
     const userSymptoms =
-      extractSymptoms(prompt);
+      await extractSymptoms(prompt);
 
-    logStep(
-      "SYMPTOMS EXTRACTED",
-      userSymptoms
-    );
+    console.log("USER PROMPT:");
+    console.log(prompt);
 
-    /* =============================
-       RANK DISEASES
-    ============================= */
+    console.log("EXTRACTED SYMPTOMS:");
+    console.log(userSymptoms);
 
-    const rankedDiseases =
-      await rankDiseases(
-        userSymptoms
-      );
 
-    logStep(
-      "TOP DISEASES FOUND",
-      rankedDiseases
-    );
 
-    /* =============================
-       WEB SEARCH
-    ============================= */
+    /* =========================================
+       STEP 2 — NORMAL CHAT FALLBACK
+    ========================================= */
 
-    const webResults = [];
+    if (userSymptoms.length === 0) {
 
-    for (const disease of rankedDiseases) {
+      console.log("NO SYMPTOMS FOUND");
+      console.log("SWITCHING TO NORMAL CHAT");
 
-      const searchQuery =
-        `${disease.disease} symptoms treatment prognosis`;
+      const chatResponse =
+        await normalChat(prompt);
 
-      const results =
-        await searchMedical(
-          searchQuery
-        );
+      return res.status(200).json({
 
-      webResults.push({
+        mode: "chat",
 
-        disease:
-          disease.disease,
+        extractedSymptoms: [],
 
-        results,
+        response: chatResponse
 
       });
 
     }
 
-    logStep(
-      "ALL WEB SEARCHES COMPLETE",
-      webResults
-    );
 
-    /* =============================
-       BUILD LLM CONTEXT
-    ============================= */
+
+    /* =========================================
+       STEP 3 — RANK DISEASES
+    ========================================= */
+
+    const rankedDiseases =
+      await rankDiseases(userSymptoms);
+
+    console.log("RANKED DISEASES:");
+    console.log(rankedDiseases);
+
+
+
+    /* =========================================
+       STEP 4 — WEB SEARCH
+    ========================================= */
+
+    const searchQuery =
+      `${userSymptoms.join(", ")} symptoms treatment prognosis`;
+
+    const webResults =
+      await searchMedical(searchQuery);
+
+    console.log("WEB RESULTS:");
+    console.log(JSON.stringify(webResults, null, 2));
+
+
+
+    /* =========================================
+       STEP 5 — BUILD CONTEXT
+    ========================================= */
 
     const context = `
-
 USER QUERY:
 ${prompt}
 
@@ -427,13 +404,8 @@ ${JSON.stringify(userSymptoms, null, 2)}
 TOP DISEASE MATCHES:
 ${JSON.stringify(rankedDiseases, null, 2)}
 
-MEDICAL SEARCH RESULTS:
-${webResults.map(w => `
-
-Disease: ${w.disease}
-
-${w.results.map(r => `
-
+WEB SEARCH RESULTS:
+${webResults.map(r => `
 Title: ${r.title}
 
 Content:
@@ -441,116 +413,90 @@ ${r.content?.slice(0, 500)}
 
 URL:
 ${r.url}
-
 `).join("\n")}
-
-`).join("\n")}
-
 `;
 
-    logStep(
-      "FINAL CONTEXT SENT TO LLM",
-      context
-    );
 
-    /* =============================
-       SEND TO GROQ
-    ============================= */
 
-    logStep(
-      "LLM REQUEST STARTED"
-    );
+    /* =========================================
+       STEP 6 — FINAL MEDICAL AI RESPONSE
+    ========================================= */
 
     const response = await fetch(
       "https://api.groq.com/openai/v1/chat/completions",
       {
-
         method: "POST",
 
         headers: {
-
-          "Content-Type":
-            "application/json",
+          "Content-Type": "application/json",
 
           "Authorization":
             `Bearer ${process.env.GROQ_API_KEY}`
-
         },
 
         body: JSON.stringify({
 
-          model:
-            "llama-3.1-8b-instant",
+          model: "llama-3.1-8b-instant",
 
           messages: [
 
             {
-
               role: "system",
 
               content: `
-
 You are MEDLAB AI.
 
 You are a professional medical AI assistant.
 
 You are given:
-- user symptoms
-- ranked disease matches
-- live medical search evidence
+- extracted symptoms
+- disease ranking
+- medical web evidence
 
 Your job:
-- summarize likely conditions
-- explain why they may match
-- explain common symptoms
-- suggest medical follow-up
+- summarize possible conditions
+- explain possible causes
+- explain symptom relevance
+- provide safe medical guidance
+- recommend professional medical care
 
-IMPORTANT RULES:
-- prioritize common illnesses first
-- rare diseases should ONLY appear if confidence is high
+Rules:
 - NEVER claim certainty
 - NEVER provide definitive diagnosis
-- ALWAYS recommend professional medical care
-- use clean formatting
-- use bullet points
-- keep answers readable
+- NEVER pretend to be a doctor
+- explain uncertainty clearly
 
+Use:
+- bullet points
+- readable formatting
+- concise explanations
 `
-
             },
 
             {
-
               role: "user",
-
               content: context
-
             }
 
           ],
 
-          temperature: 0.3,
+          temperature: 0.4,
 
           max_tokens: 1500
 
         })
-
       }
     );
 
-    const data =
-      await response.json();
 
-    logStep(
-      "LLM RESPONSE RECEIVED",
-      data
-    );
+
+    const data = await response.json();
 
     if (!response.ok) {
 
-      return res.status(
-        response.status
-      ).json({
+      console.error(data);
+
+      return res.status(response.status).json({
 
         message:
           data.error?.message ||
@@ -560,46 +506,51 @@ IMPORTANT RULES:
 
     }
 
+
+
     const reply =
-      data.choices?.[0]?.message?.content ||
-      "No response generated";
+      data.choices?.[0]?.message?.content
+      || "No response generated";
 
-    logStep(
-      "FINAL RESPONSE GENERATED",
-      reply
-    );
 
-    /* =============================
-       SEND RESPONSE
-    ============================= */
 
-    res.status(200).json({
+    console.log("FINAL AI RESPONSE:");
+    console.log(reply);
+
+
+
+    /* =========================================
+       FINAL RESPONSE
+    ========================================= */
+
+    return res.status(200).json({
+
+      mode: "medical",
+
+      extractedSymptoms: userSymptoms,
+
+      rankedDiseases,
+
+      webResults,
 
       response: reply,
 
-      diseases: rankedDiseases,
+      sources: webResults.map(r => ({
 
-      sources:
-        webResults.flatMap(w =>
-          w.results.map(r => ({
+        title: r.title,
 
-            title: r.title,
-            url: r.url
+        url: r.url
 
-          }))
-        )
+      }))
 
     });
 
   } catch (error) {
 
-    console.error("\n=================================");
-    console.error("FATAL ERROR");
-    console.error("=================================\n");
-
+    console.error("SERVER ERROR:");
     console.error(error);
 
-    res.status(500).json({
+    return res.status(500).json({
       message: error.message
     });
 
