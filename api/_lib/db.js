@@ -3,6 +3,7 @@ import { open } from "sqlite";
 
 import path from "path";
 import fs from "fs";
+import os from "os";
 
 export async function getDB() {
 
@@ -13,8 +14,8 @@ export async function getDB() {
     "combined_medical_database_optimized.db"
   );
 
-  // Writable temp DB path
-  const tempPath = "/tmp/medical.db";
+  // Writable temp DB path for both Vercel Linux and local Windows runs.
+  const tempPath = path.join(os.tmpdir(), "medical.db");
 
   console.log("SOURCE:", sourcePath);
   console.log("TMP:", tempPath);
@@ -24,7 +25,7 @@ export async function getDB() {
 
     fs.copyFileSync(sourcePath, tempPath);
 
-    console.log("DB copied to /tmp");
+    console.log("DB copied to temp storage");
 
   }
 

@@ -85,6 +85,10 @@ h1 {
   border-radius: var(--radius-md) var(--radius-md) var(--radius-md) 4px;
 }
 
+.message.progress-message {
+  color: var(--accent);
+}
+
 .message.bot::before {
   content: '';
   position: absolute;

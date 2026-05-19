@@ -140,6 +140,32 @@
       scrollToBottom();
     }
 
+    function parseServerEvents(buffer, onEvent) {
+      const events = buffer.split("\n\n");
+      const remaining = events.pop() || "";
+
+      for (const rawEvent of events) {
+        let eventName = "message";
+        const dataLines = [];
+
+        for (const line of rawEvent.split("\n")) {
+          if (line.startsWith("event:")) {
+            eventName = line.slice(6).trim();
+          }
+
+          if (line.startsWith("data:")) {
+            dataLines.push(line.slice(5).trim());
+          }
+        }
+
+        if (dataLines.length > 0) {
+          onEvent(eventName, JSON.parse(dataLines.join("\n")));
+        }
+      }
+
+      return remaining;
+    }
+
     async function sendMessage() {
 
       const userText = input.value.trim();
@@ -153,15 +179,11 @@
       input.disabled = true;
       sendButton.disabled = true;
 
-      // LOADING MESSAGE
-
       const loadingDiv = document.createElement("div");
 
-      loadingDiv.className = "message bot";
+      loadingDiv.className = "message bot progress-message";
 
-      loadingDiv.innerHTML = `
-        Thinking...
-      `;
+      loadingDiv.textContent = "User query received";
 
       chatBox.appendChild(loadingDiv);
 
@@ -174,7 +196,8 @@
           method: "POST",
 
           headers: {
-            "Content-Type": "application/json"
+            "Content-Type": "application/json",
+            "Accept": "text/event-stream"
           },
 
           body: JSON.stringify({
@@ -183,30 +206,52 @@
 
         });
 
-        let data = {};
-
-        try {
-          data = await response.json();
-        } catch {
-          throw new Error("Invalid server response");
+        if (!response.ok) {
+          throw new Error("Server error occurred");
         }
 
-        loadingDiv.remove();
+        if (!response.body) {
+          throw new Error("Streaming is not supported in this browser");
+        }
 
-        if (!response.ok) {
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        let buffer = "";
+        let finalData = null;
 
-          throw new Error(
-            data.message ||
-            "Server error occurred"
-          );
+        while (true) {
+          const { value, done } = await reader.read();
 
+          if (done) break;
+
+          buffer += decoder.decode(value, { stream: true });
+
+          buffer = parseServerEvents(buffer, (eventName, data) => {
+            if (eventName === "progress") {
+              loadingDiv.textContent = data.text;
+              scrollToBottom();
+            }
+
+            if (eventName === "final") {
+              finalData = data;
+            }
+
+            if (eventName === "error") {
+              throw new Error(data.message || "Server error occurred");
+            }
+          });
+        }
+
+        if (!finalData) {
+          throw new Error("No response received.");
         }
 
         const botReply =
-          data.response?.trim() ||
+          finalData.response?.trim() ||
           "No response received.";
 
-        createMessage(botReply, "bot");
+        loadingDiv.textContent = botReply;
+        loadingDiv.classList.remove("progress-message");
 
       } catch (error) {
 
