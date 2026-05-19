@@ -9,7 +9,9 @@ import { getDB } from "./_lib/db.js";
    SYMPTOM EXTRACTION
 ========================================= */
 
-async function extractSymptoms(prompt) {
+async function extractSymptoms(prompt, debug) {
+
+  let content = "[]";
 
   try {
 
@@ -34,28 +36,24 @@ async function extractSymptoms(prompt) {
               role: "system",
 
               content: `
-You are a medical symptom extractor.
+Extract ONLY medical symptoms.
 
-Your ONLY task:
-- extract medically relevant symptoms
-- return ONLY valid JSON array
+Return ONLY a JSON array.
 
-Rules:
-- ignore greetings
-- ignore filler words
-- ignore normal conversation
-- only include symptoms
+NO markdown.
+NO explanation.
+NO text outside JSON.
 
 Examples:
 
 Input:
-"I have headache and fever"
+"I have fever and cough"
 
 Output:
-["headache","fever"]
+["fever","cough"]
 
 Input:
-"hello how are you"
+"hello"
 
 Output:
 []
@@ -78,37 +76,61 @@ Output:
 
     const data = await response.json();
 
-    let content =
+    debug.push({
+      step: "RAW EXTRACTOR RESPONSE",
+      data
+    });
+
+    content =
       data.choices?.[0]?.message?.content || "[]";
 
-    // Clean markdown if model returns ```json
     content = content
       .replace(/```json/g, "")
       .replace(/```/g, "")
       .trim();
 
-    const parsed = JSON.parse(content);
+    // safer parsing
+    const match =
+      content.match(/\[[\s\S]*\]/);
 
-    if (Array.isArray(parsed)) {
-      return parsed;
+    if (!match) {
+
+      debug.push({
+        step: "NO JSON ARRAY FOUND",
+        data: content
+      });
+
+      return [];
+
     }
 
-    return [];
+    const parsed =
+      JSON.parse(match[0]);
+
+    if (!Array.isArray(parsed)) {
+      return [];
+    }
+
+    debug.push({
+      step: "EXTRACTED SYMPTOMS",
+      data: parsed
+    });
+
+    return parsed;
 
   } catch (error) {
 
-  console.error("==========");
-  console.error("SYMPTOM EXTRACTION ERROR");
-  console.error(error);
+    debug.push({
+      step: "SYMPTOM EXTRACTION ERROR",
+      data: {
+        error: error.message,
+        rawContent: content
+      }
+    });
 
-  console.error("RAW MODEL OUTPUT:");
-  console.error(content);
+    return [];
 
-  console.error("==========");
-
-  return [];
-
-}
+  }
 
 }
 
@@ -118,15 +140,12 @@ Output:
    RANK DISEASES
 ========================================= */
 
-async function rankDiseases(userSymptoms) {
+async function rankDiseases(userSymptoms, debug) {
 
   const db = await getDB();
 
-  console.log("DB CONNECTED");
-
   const matchedSymptoms = [];
 
-  // Match symptoms from DB
   for (const symptom of userSymptoms) {
 
     const rows = await db.all(`
@@ -140,19 +159,21 @@ async function rankDiseases(userSymptoms) {
 
   }
 
-  console.log("MATCHED SYMPTOMS:");
-  console.log(matchedSymptoms);
+  debug.push({
+    step: "MATCHED DB SYMPTOMS",
+    data: matchedSymptoms
+  });
 
-  // Extract HPO IDs
   const hpoIds =
     [...new Set(
       matchedSymptoms.map(s => s.id)
     )];
 
-  console.log("HPO IDS:");
-  console.log(hpoIds);
+  debug.push({
+    step: "HPO IDS",
+    data: hpoIds
+  });
 
-  // Get disease mappings
   const diseases = await db.all(`
     SELECT *
     FROM disease_symptoms
@@ -164,7 +185,6 @@ async function rankDiseases(userSymptoms) {
 
     let score = 0;
 
-    // Convert CSV string into array
     const diseaseSymptoms =
       disease.symptoms
         ?.split(",")
@@ -178,7 +198,7 @@ async function rankDiseases(userSymptoms) {
 
     }
 
-    // Require stronger evidence
+    // stronger filtering
     if (score >= Math.min(2, userSymptoms.length)) {
 
       scored.push({
@@ -192,7 +212,15 @@ async function rankDiseases(userSymptoms) {
 
   scored.sort((a, b) => b.score - a.score);
 
-  return scored.slice(0, 5);
+  const topDiseases =
+    scored.slice(0, 5);
+
+  debug.push({
+    step: "RANKED DISEASES",
+    data: topDiseases
+  });
+
+  return topDiseases;
 
 }
 
@@ -202,7 +230,7 @@ async function rankDiseases(userSymptoms) {
    WEB SEARCH
 ========================================= */
 
-async function searchMedical(query) {
+async function searchMedical(query, debug) {
 
   try {
 
@@ -231,12 +259,19 @@ async function searchMedical(query) {
 
     const data = await response.json();
 
+    debug.push({
+      step: "WEB SEARCH RESULTS",
+      data: data.results || []
+    });
+
     return data.results || [];
 
   } catch (error) {
 
-    console.error("TAVILY ERROR:");
-    console.error(error);
+    debug.push({
+      step: "WEB SEARCH ERROR",
+      data: error.message
+    });
 
     return [];
 
@@ -271,7 +306,6 @@ async function normalChat(prompt) {
 
           {
             role: "system",
-
             content:
               "You are a friendly medical AI assistant."
           },
@@ -306,15 +340,17 @@ async function normalChat(prompt) {
 
 export default async function handler(req, res) {
 
-  if (req.method !== "POST") {
-
-    return res.status(405).json({
-      message: "Method not allowed"
-    });
-
-  }
+  const debug = [];
 
   try {
+
+    if (req.method !== "POST") {
+
+      return res.status(405).json({
+        message: "Method not allowed"
+      });
+
+    }
 
     const { prompt } = req.body;
 
@@ -326,34 +362,35 @@ export default async function handler(req, res) {
 
     }
 
+    debug.push({
+      step: "USER PROMPT",
+      data: prompt
+    });
+
 
 
     /* =========================================
-       STEP 1 — EXTRACT SYMPTOMS
+       EXTRACT SYMPTOMS
     ========================================= */
 
     const userSymptoms =
-      await extractSymptoms(prompt);
-
-    console.log("USER PROMPT:");
-    console.log(prompt);
-
-    console.log("EXTRACTED SYMPTOMS:");
-    console.log(userSymptoms);
+      await extractSymptoms(prompt, debug);
 
 
 
     /* =========================================
-       STEP 2 — NORMAL CHAT FALLBACK
+       NORMAL CHAT FALLBACK
     ========================================= */
 
     if (userSymptoms.length === 0) {
 
-      console.log("NO SYMPTOMS FOUND");
-      console.log("SWITCHING TO NORMAL CHAT");
-
       const chatResponse =
         await normalChat(prompt);
+
+      debug.push({
+        step: "MODE",
+        data: "NORMAL CHAT"
+      });
 
       return res.status(200).json({
 
@@ -361,7 +398,9 @@ export default async function handler(req, res) {
 
         extractedSymptoms: [],
 
-        response: chatResponse
+        response: chatResponse,
+
+        debug
 
       });
 
@@ -370,34 +409,34 @@ export default async function handler(req, res) {
 
 
     /* =========================================
-       STEP 3 — RANK DISEASES
+       DISEASE RANKING
     ========================================= */
 
     const rankedDiseases =
-      await rankDiseases(userSymptoms);
-
-    console.log("RANKED DISEASES:");
-    console.log(rankedDiseases);
+      await rankDiseases(
+        userSymptoms,
+        debug
+      );
 
 
 
     /* =========================================
-       STEP 4 — WEB SEARCH
+       WEB SEARCH
     ========================================= */
 
     const searchQuery =
       `${userSymptoms.join(", ")} symptoms treatment prognosis`;
 
     const webResults =
-      await searchMedical(searchQuery);
-
-    console.log("WEB RESULTS:");
-    console.log(JSON.stringify(webResults, null, 2));
+      await searchMedical(
+        searchQuery,
+        debug
+      );
 
 
 
     /* =========================================
-       STEP 5 — BUILD CONTEXT
+       BUILD CONTEXT
     ========================================= */
 
     const context = `
@@ -425,7 +464,7 @@ ${r.url}
 
 
     /* =========================================
-       STEP 6 — FINAL MEDICAL AI RESPONSE
+       FINAL AI RESPONSE
     ========================================= */
 
     const response = await fetch(
@@ -435,7 +474,6 @@ ${r.url}
 
         headers: {
           "Content-Type": "application/json",
-
           "Authorization":
             `Bearer ${process.env.GROQ_API_KEY}`
         },
@@ -452,30 +490,13 @@ ${r.url}
               content: `
 You are MEDLAB AI.
 
-You are a professional medical AI assistant.
+Provide safe medical guidance.
 
-You are given:
-- extracted symptoms
-- disease ranking
-- medical web evidence
+NEVER diagnose with certainty.
 
-Your job:
-- summarize possible conditions
-- explain possible causes
-- explain symptom relevance
-- provide safe medical guidance
-- recommend professional medical care
+Explain possible conditions clearly.
 
-Rules:
-- NEVER claim certainty
-- NEVER provide definitive diagnosis
-- NEVER pretend to be a doctor
-- explain uncertainty clearly
-
-Use:
-- bullet points
-- readable formatting
-- concise explanations
+Use bullet points.
 `
             },
 
@@ -494,34 +515,16 @@ Use:
       }
     );
 
-
-
     const data = await response.json();
-
-    if (!response.ok) {
-
-      console.error(data);
-
-      return res.status(response.status).json({
-
-        message:
-          data.error?.message ||
-          "Groq API Error"
-
-      });
-
-    }
-
-
 
     const reply =
       data.choices?.[0]?.message?.content
       || "No response generated";
 
-
-
-    console.log("FINAL AI RESPONSE:");
-    console.log(reply);
+    debug.push({
+      step: "FINAL AI RESPONSE",
+      data: reply
+    });
 
 
 
@@ -541,10 +544,11 @@ Use:
 
       response: reply,
 
+      debug,
+
       sources: webResults.map(r => ({
 
         title: r.title,
-
         url: r.url
 
       }))
@@ -553,11 +557,17 @@ Use:
 
   } catch (error) {
 
-    console.error("SERVER ERROR:");
-    console.error(error);
+    debug.push({
+      step: "SERVER ERROR",
+      data: error.message
+    });
 
     return res.status(500).json({
-      message: error.message
+
+      message: error.message,
+
+      debug
+
     });
 
   }

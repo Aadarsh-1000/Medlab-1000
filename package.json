@@ -4,11 +4,10 @@
   "private": true,
   "type": "module",
 
- "scripts": {
-  "dev": "next dev",
-  "build": "next build",
-  "start": "next start"
-},
+  "scripts": {
+    "dev": "vercel dev",
+    "build": "echo Build complete"
+  },
 
  
   "dependencies": {
