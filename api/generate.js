@@ -1,580 +1,472 @@
-import dotenv from "dotenv";
-dotenv.config();
+// ============================================
+// FULLY FIXED FRONTEND CHAT UI
+// WITH DEBUG PANEL
+// ============================================
 
-import { getDB } from "./_lib/db.js";
+import { useState } from "react";
 
+export default function Home() {
 
+  const [prompt, setPrompt] = useState("");
 
-/* =========================================
-   SYMPTOM EXTRACTION
-========================================= */
+  const [messages, setMessages] = useState([
 
-async function extractSymptoms(prompt, debug) {
-
-  let content = "[]";
-
-  try {
-
-    const response = await fetch(
-      "https://api.groq.com/openai/v1/chat/completions",
-      {
-        method: "POST",
-
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization":
-            `Bearer ${process.env.GROQ_API_KEY}`
-        },
-
-        body: JSON.stringify({
-
-          model: "llama-3.1-8b-instant",
-
-          messages: [
-
-            {
-              role: "system",
-
-              content: `
-Extract ONLY medical symptoms.
-
-Return ONLY a JSON array.
-
-NO markdown.
-NO explanation.
-NO text outside JSON.
-
-Examples:
-
-Input:
-"I have fever and cough"
-
-Output:
-["fever","cough"]
-
-Input:
-"hello"
-
-Output:
-[]
-`
-            },
-
-            {
-              role: "user",
-              content: prompt
-            }
-
-          ],
-
-          temperature: 0,
-          max_tokens: 100
-
-        })
-      }
-    );
-
-    const data = await response.json();
-    console.log("FULL API RESPONSE:");
-console.log(data);
-
-console.log("DEBUG PIPELINE:");
-console.log(data.debug);
-
-    debug.push({
-      step: "RAW EXTRACTOR RESPONSE",
-      data
-    });
-
-    content =
-      data.choices?.[0]?.message?.content || "[]";
-
-    content = content
-      .replace(/```json/g, "")
-      .replace(/```/g, "")
-      .trim();
-
-    // safer parsing
-    const match =
-      content.match(/\[[\s\S]*\]/);
-
-    if (!match) {
-
-      debug.push({
-        step: "NO JSON ARRAY FOUND",
-        data: content
-      });
-
-      return [];
-
-    }
-
-    const parsed =
-      JSON.parse(match[0]);
-
-    if (!Array.isArray(parsed)) {
-      return [];
-    }
-
-    debug.push({
-      step: "EXTRACTED SYMPTOMS",
-      data: parsed
-    });
-
-    return parsed;
-
-  } catch (error) {
-
-    debug.push({
-      step: "SYMPTOM EXTRACTION ERROR",
-      data: {
-        error: error.message,
-        rawContent: content
-      }
-    });
-
-    return [];
-
-  }
-
-}
-
-
-
-/* =========================================
-   RANK DISEASES
-========================================= */
-
-async function rankDiseases(userSymptoms, debug) {
-
-  const db = await getDB();
-
-  const matchedSymptoms = [];
-
-  for (const symptom of userSymptoms) {
-
-    const rows = await db.all(`
-      SELECT *
-      FROM symptoms
-      WHERE LOWER(name) LIKE LOWER(?)
-      LIMIT 10
-    `, [`%${symptom}%`]);
-
-    matchedSymptoms.push(...rows);
-
-  }
-
-  debug.push({
-    step: "MATCHED DB SYMPTOMS",
-    data: matchedSymptoms
-  });
-
-  const hpoIds =
-    [...new Set(
-      matchedSymptoms.map(s => s.id)
-    )];
-
-  debug.push({
-    step: "HPO IDS",
-    data: hpoIds
-  });
-
-  const diseases = await db.all(`
-    SELECT *
-    FROM disease_symptoms
-  `);
-
-  const scored = [];
-
-  for (const disease of diseases) {
-
-    let score = 0;
-
-    const diseaseSymptoms =
-      disease.symptoms
-        ?.split(",")
-        .map(s => s.trim()) || [];
-
-    for (const hpo of hpoIds) {
-
-      if (diseaseSymptoms.includes(hpo)) {
-        score++;
-      }
-
-    }
-
-    // stronger filtering
-    if (score >= Math.min(2, userSymptoms.length)) {
-
-      scored.push({
-        disease: disease.id,
-        score
-      });
-
-    }
-
-  }
-
-  scored.sort((a, b) => b.score - a.score);
-
-  const topDiseases =
-    scored.slice(0, 5);
-
-  debug.push({
-    step: "RANKED DISEASES",
-    data: topDiseases
-  });
-
-  return topDiseases;
-
-}
-
-
-
-/* =========================================
-   WEB SEARCH
-========================================= */
-
-async function searchMedical(query, debug) {
-
-  try {
-
-    const response = await fetch(
-      "https://api.tavily.com/search",
-      {
-        method: "POST",
-
-        headers: {
-          "Content-Type": "application/json",
-        },
-
-        body: JSON.stringify({
-
-          api_key: process.env.TAVILY_API_KEY,
-
-          query,
-
-          search_depth: "advanced",
-
-          max_results: 5
-
-        })
-      }
-    );
-
-    const data = await response.json();
-
-    debug.push({
-      step: "WEB SEARCH RESULTS",
-      data: data.results || []
-    });
-
-    return data.results || [];
-
-  } catch (error) {
-
-    debug.push({
-      step: "WEB SEARCH ERROR",
-      data: error.message
-    });
-
-    return [];
-
-  }
-
-}
-
-
-
-/* =========================================
-   NORMAL CHAT
-========================================= */
-
-async function normalChat(prompt) {
-
-  const response = await fetch(
-    "https://api.groq.com/openai/v1/chat/completions",
     {
-      method: "POST",
-
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization":
-          `Bearer ${process.env.GROQ_API_KEY}`
-      },
-
-      body: JSON.stringify({
-
-        model: "llama-3.1-8b-instant",
-
-        messages: [
-
-          {
-            role: "system",
-            content:
-              "You are a friendly medical AI assistant."
-          },
-
-          {
-            role: "user",
-            content: prompt
-          }
-
-        ],
-
-        temperature: 0.7
-
-      })
+      role: "assistant",
+      text: "Hello 👋\nAsk me any medical question."
     }
-  );
 
-  const data = await response.json();
+  ]);
+
+  const [loading, setLoading] = useState(false);
+
+
+
+  async function sendMessage() {
+
+    if (!prompt.trim()) return;
+
+    const userMessage = {
+      role: "user",
+      text: prompt
+    };
+
+    setMessages(prev => [...prev, userMessage]);
+
+    const currentPrompt = prompt;
+
+    setPrompt("");
+
+    setLoading(true);
+
+    try {
+
+      const response = await fetch("/api/chat", {
+
+        method: "POST",
+
+        headers: {
+          "Content-Type": "application/json"
+        },
+
+        body: JSON.stringify({
+          prompt: currentPrompt
+        })
+
+      });
+
+      const data = await response.json();
+
+      console.log("FULL API RESPONSE:");
+      console.log(data);
+
+      const assistantMessage = {
+
+        role: "assistant",
+
+        text:
+          data.response ||
+          "No response generated",
+
+        debug:
+          data.debug || [],
+
+        extractedSymptoms:
+          data.extractedSymptoms || [],
+
+        rankedDiseases:
+          data.rankedDiseases || [],
+
+        webResults:
+          data.webResults || []
+
+      };
+
+      setMessages(prev => [
+        ...prev,
+        assistantMessage
+      ]);
+
+    } catch (error) {
+
+      console.error(error);
+
+      setMessages(prev => [
+
+        ...prev,
+
+        {
+          role: "assistant",
+          text: "Something went wrong."
+        }
+
+      ]);
+
+    }
+
+    setLoading(false);
+
+  }
+
+
 
   return (
-    data.choices?.[0]?.message?.content
-    || "No response generated"
-  );
 
-}
-
-
-
-/* =========================================
-   MAIN HANDLER
-========================================= */
-
-export default async function handler(req, res) {
-
-  const debug = [];
-
-  try {
-
-    if (req.method !== "POST") {
-
-      return res.status(405).json({
-        message: "Method not allowed"
-      });
-
-    }
-
-    const { prompt } = req.body;
-
-    if (!prompt) {
-
-      return res.status(400).json({
-        message: "Prompt is required"
-      });
-
-    }
-
-    debug.push({
-      step: "USER PROMPT",
-      data: prompt
-    });
-
-
-
-    /* =========================================
-       EXTRACT SYMPTOMS
-    ========================================= */
-
-    const userSymptoms =
-      await extractSymptoms(prompt, debug);
-
-
-
-    /* =========================================
-       NORMAL CHAT FALLBACK
-    ========================================= */
-
-    if (userSymptoms.length === 0) {
-
-      const chatResponse =
-        await normalChat(prompt);
-
-      debug.push({
-        step: "MODE",
-        data: "NORMAL CHAT"
-      });
-
-      return res.status(200).json({
-
-        mode: "chat",
-
-        extractedSymptoms: [],
-
-        response: chatResponse,
-
-        debug
-
-      });
-
-    }
-
-
-
-    /* =========================================
-       DISEASE RANKING
-    ========================================= */
-
-    const rankedDiseases =
-      await rankDiseases(
-        userSymptoms,
-        debug
-      );
-
-
-
-    /* =========================================
-       WEB SEARCH
-    ========================================= */
-
-    const searchQuery =
-      `${userSymptoms.join(", ")} symptoms treatment prognosis`;
-
-    const webResults =
-      await searchMedical(
-        searchQuery,
-        debug
-      );
-
-
-
-    /* =========================================
-       BUILD CONTEXT
-    ========================================= */
-
-    const context = `
-USER QUERY:
-${prompt}
-
-EXTRACTED SYMPTOMS:
-${JSON.stringify(userSymptoms, null, 2)}
-
-TOP DISEASE MATCHES:
-${JSON.stringify(rankedDiseases, null, 2)}
-
-WEB SEARCH RESULTS:
-${webResults.map(r => `
-Title: ${r.title}
-
-Content:
-${r.content?.slice(0, 500)}
-
-URL:
-${r.url}
-`).join("\n")}
-`;
-
-
-
-    /* =========================================
-       FINAL AI RESPONSE
-    ========================================= */
-
-    const response = await fetch(
-      "https://api.groq.com/openai/v1/chat/completions",
-      {
-        method: "POST",
-
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization":
-            `Bearer ${process.env.GROQ_API_KEY}`
-        },
-
-        body: JSON.stringify({
-
-          model: "llama-3.1-8b-instant",
-
-          messages: [
-
-            {
-              role: "system",
-
-              content: `
-You are MEDLAB AI.
-
-Provide safe medical guidance.
-
-NEVER diagnose with certainty.
-
-Explain possible conditions clearly.
-
-Use bullet points.
-`
-            },
-
-            {
-              role: "user",
-              content: context
+    <div
+      style={{
+        background: "#000",
+        minHeight: "100vh",
+        padding: "40px",
+        color: "#fff",
+        fontFamily: "sans-serif"
+      }}
+    >
+
+      {/* TITLE */}
+      <h1
+        style={{
+          textAlign: "center",
+          fontSize: "64px",
+          marginBottom: "40px"
+        }}
+      >
+        MEDLAB AI
+      </h1>
+
+
+
+      {/* CHAT */}
+      <div
+        style={{
+          maxWidth: "1200px",
+          margin: "0 auto"
+        }}
+      >
+
+        {messages.map((msg, index) => (
+
+          <div key={index}>
+
+            {/* USER MESSAGE */}
+            {msg.role === "user" && (
+
+              <div
+                style={{
+                  background: "#e7e3ed",
+                  color: "#000",
+                  padding: "22px",
+                  borderRadius: "20px",
+                  marginBottom: "20px",
+                  fontSize: "30px"
+                }}
+              >
+                {msg.text}
+              </div>
+
+            )}
+
+
+
+            {/* ASSISTANT MESSAGE */}
+            {msg.role === "assistant" && (
+
+              <div
+                style={{
+                  background: "#16161d",
+                  padding: "25px",
+                  borderRadius: "20px",
+                  marginBottom: "30px"
+                }}
+              >
+
+                {/* MAIN RESPONSE */}
+                <div
+                  style={{
+                    whiteSpace: "pre-wrap",
+                    lineHeight: "1.8",
+                    fontSize: "28px"
+                  }}
+                >
+                  {msg.text}
+                </div>
+
+
+
+                {/* DEBUG PANEL */}
+                {msg.debug &&
+                 msg.debug.length > 0 && (
+
+                  <div
+                    style={{
+                      marginTop: "30px",
+                      background: "#0d1117",
+                      border: "1px solid #333",
+                      borderRadius: "15px",
+                      padding: "20px"
+                    }}
+                  >
+
+                    <div
+                      style={{
+                        fontSize: "24px",
+                        color: "#58a6ff",
+                        marginBottom: "20px",
+                        fontWeight: "bold"
+                      }}
+                    >
+                      AI PIPELINE DEBUG
+                    </div>
+
+
+
+                    {msg.debug.map((item, i) => (
+
+                      <div
+                        key={i}
+                        style={{
+                          marginBottom: "20px",
+                          borderBottom:
+                            "1px solid #222",
+                          paddingBottom: "15px"
+                        }}
+                      >
+
+                        <div
+                          style={{
+                            color: "#7ee787",
+                            marginBottom: "10px",
+                            fontSize: "20px",
+                            fontWeight: "bold"
+                          }}
+                        >
+                          {item.step}
+                        </div>
+
+                        <pre
+                          style={{
+                            whiteSpace: "pre-wrap",
+                            color: "#c9d1d9",
+                            fontSize: "16px",
+                            overflowX: "auto"
+                          }}
+                        >
+                          {JSON.stringify(
+                            item.data,
+                            null,
+                            2
+                          )}
+                        </pre>
+
+                      </div>
+
+                    ))}
+
+                  </div>
+
+                )}
+
+
+
+                {/* EXTRACTED SYMPTOMS */}
+                {msg.extractedSymptoms &&
+                 msg.extractedSymptoms.length > 0 && (
+
+                  <div
+                    style={{
+                      marginTop: "30px"
+                    }}
+                  >
+
+                    <div
+                      style={{
+                        fontSize: "24px",
+                        marginBottom: "15px",
+                        color: "#58a6ff"
+                      }}
+                    >
+                      Extracted Symptoms
+                    </div>
+
+                    <div
+                      style={{
+                        display: "flex",
+                        gap: "10px",
+                        flexWrap: "wrap"
+                      }}
+                    >
+
+                      {msg.extractedSymptoms.map(
+                        (symptom, i) => (
+
+                        <div
+                          key={i}
+                          style={{
+                            background: "#1f6feb",
+                            padding:
+                              "10px 18px",
+                            borderRadius: "999px",
+                            fontSize: "18px"
+                          }}
+                        >
+                          {symptom}
+                        </div>
+
+                      ))}
+
+                    </div>
+
+                  </div>
+
+                )}
+
+
+
+                {/* RANKED DISEASES */}
+                {msg.rankedDiseases &&
+                 msg.rankedDiseases.length > 0 && (
+
+                  <div
+                    style={{
+                      marginTop: "30px"
+                    }}
+                  >
+
+                    <div
+                      style={{
+                        fontSize: "24px",
+                        marginBottom: "15px",
+                        color: "#58a6ff"
+                      }}
+                    >
+                      Ranked Diseases
+                    </div>
+
+                    {msg.rankedDiseases.map(
+                      (disease, i) => (
+
+                      <div
+                        key={i}
+                        style={{
+                          background: "#111",
+                          padding: "15px",
+                          borderRadius: "12px",
+                          marginBottom: "10px"
+                        }}
+                      >
+
+                        <div
+                          style={{
+                            fontSize: "20px"
+                          }}
+                        >
+                          {disease.disease}
+                        </div>
+
+                        <div
+                          style={{
+                            color: "#999",
+                            marginTop: "5px"
+                          }}
+                        >
+                          Score: {disease.score}
+                        </div>
+
+                      </div>
+
+                    ))}
+
+                  </div>
+
+                )}
+
+              </div>
+
+            )}
+
+          </div>
+
+        ))}
+
+
+
+        {/* LOADING */}
+        {loading && (
+
+          <div
+            style={{
+              marginTop: "20px",
+              color: "#888",
+              fontSize: "24px"
+            }}
+          >
+            Thinking...
+          </div>
+
+        )}
+
+
+
+        {/* INPUT BAR */}
+        <div
+          style={{
+            display: "flex",
+            gap: "15px",
+            marginTop: "30px",
+            position: "sticky",
+            bottom: "20px"
+          }}
+        >
+
+          <input
+
+            value={prompt}
+
+            onChange={(e) =>
+              setPrompt(e.target.value)
             }
 
-          ],
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                sendMessage();
+              }
+            }}
 
-          temperature: 0.4,
+            placeholder="Ask a medical question..."
 
-          max_tokens: 1500
-
-        })
-      }
-    );
-
-    const data = await response.json();
-
-    const reply =
-      data.choices?.[0]?.message?.content
-      || "No response generated";
-
-    debug.push({
-      step: "FINAL AI RESPONSE",
-      data: reply
-    });
-
+            style={{
+              flex: 1,
+              background: "#111",
+              color: "#fff",
+              border: "1px solid #333",
+              padding: "22px",
+              borderRadius: "999px",
+              fontSize: "24px",
+              outline: "none"
+            }}
+          />
 
 
-    /* =========================================
-       FINAL RESPONSE
-    ========================================= */
 
-    return res.status(200).json({
+          <button
 
-      mode: "medical",
+            onClick={sendMessage}
 
-      extractedSymptoms: userSymptoms,
+            style={{
+              width: "80px",
+              height: "80px",
+              borderRadius: "999px",
+              border: "none",
+              background: "#b392f0",
+              cursor: "pointer"
+            }}
+          />
 
-      rankedDiseases,
+        </div>
 
-      webResults,
+      </div>
 
-      response: reply,
+    </div>
 
-      debug,
-
-      sources: webResults.map(r => ({
-
-        title: r.title,
-        url: r.url
-
-      }))
-
-    });
-
-  } catch (error) {
-
-    debug.push({
-      step: "SERVER ERROR",
-      data: error.message
-    });
-
-    return res.status(500).json({
-
-      message: error.message,
-
-      debug
-
-    });
-
-  }
+  );
 
 }
