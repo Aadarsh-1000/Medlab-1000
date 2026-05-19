@@ -75,6 +75,11 @@ Output:
     );
 
     const data = await response.json();
+    console.log("FULL API RESPONSE:");
+console.log(data);
+
+console.log("DEBUG PIPELINE:");
+console.log(data.debug);
 
     debug.push({
       step: "RAW EXTRACTOR RESPONSE",
