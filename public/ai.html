@@ -210,6 +210,14 @@
           '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>'
         );
     }
+    if (!localStorage.getItem("session-id")) {
+
+  localStorage.setItem(
+    "session-id",
+    crypto.randomUUID()
+  );
+
+}
 
     function createMessage(text, sender, useMarkdown = false) {
 
@@ -284,9 +292,11 @@
           method: "POST",
 
           headers: {
-            "Content-Type": "application/json",
-            "Accept": "text/event-stream"
-          },
+  "Content-Type": "application/json",
+  "Accept": "text/event-stream",
+  "x-session-id":
+    localStorage.getItem("session-id")
+},
 
           body: JSON.stringify({
             prompt: userText
